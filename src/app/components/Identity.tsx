@@ -105,7 +105,7 @@ export default function Identity() {
 
             {/* CAPTION */}
             <p className="font-['Space_Grotesk'] text-[10px] text-[#E8E3DB]/60 uppercase tracking-[0.15em]">
-              GLOBAL LISTENING SIGNAL
+              
             </p>
 
           </div>
