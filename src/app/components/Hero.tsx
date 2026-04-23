@@ -1,29 +1,38 @@
 export default function Hero() {
   return (
     <div className="bg-[#292524] relative">
-      <div className="max-w-[1280px] mx-auto px-[64px] py-[120px]">
+      <div className="max-w-[1280px] mx-auto px-[24px] md:px-[64px] py-[120px]">
         <div className="max-w-[800px] flex flex-col gap-[32px]">
+          
+          {/* Eyebrow */}
           <p className="font-['Space_Grotesk',sans-serif] text-[10px] text-[#9B1A2A] uppercase tracking-[0.15em]">
             EMISIÓN 001 / TRANSMISIÓN DIGITAL
           </p>
 
-          <h1 className="font-['Newsreader',serif] italic text-[96px] leading-[1.1] text-[#E8E3DB]">
-            Radio<br />Frecuencia
+          {/* Title */}
+          <h1 className="font-['Newsreader',serif] italic text-[64px] md:text-[96px] leading-[1.1] text-[#E8E3DB]">
+            Radio Frecuencia
           </h1>
 
+          {/* Subtitle */}
           <p className="font-['Space_Grotesk',sans-serif] text-[18px] leading-[1.6] text-[#E8E3DB] max-w-[600px]">
             Música en español sin interrupciones. Curaduría independiente desde el margen.
           </p>
 
-          <button className="border border-[#9B1A2A] px-[32px] py-[16px] self-start">
+          {/* CTA */}
+          <a
+            href="#player"
+            className="border border-[#9B1A2A] px-[32px] py-[16px] self-start hover:bg-[#9B1A2A]/10 transition"
+          >
             <p className="font-['Space_Grotesk',sans-serif] text-[14px] text-[#E8E3DB] uppercase tracking-[0.1em]">
               ESCUCHAR EN DIRECTO
             </p>
-          </button>
+          </a>
+
         </div>
       </div>
 
-      {/* Imagen editorial abstracta inline */}
+      {/* Imagen editorial abstracta */}
       <div className="w-full h-[400px] relative overflow-hidden">
         <svg
           width="100%"
@@ -45,8 +54,12 @@ export default function Hero() {
 
           <rect x="40" y="195" width="600" height="1" fill="#9B1A2A" opacity="0.6"/>
 
-          <text x="40" y="170" fontFamily="monospace" fontSize="10" fill="#E8E3DB" opacity="0.35" letterSpacing="4">EMISIÓN · 001 · TRANSMISIÓN DIGITAL</text>
-          <text x="40" y="220" fontFamily="monospace" fontSize="9" fill="#9B1A2A" opacity="0.7" letterSpacing="3">MÚSICA INDEPENDIENTE ESPAÑOLA</text>
+          <text x="40" y="170" fontFamily="monospace" fontSize="10" fill="#E8E3DB" opacity="0.35" letterSpacing="4">
+            EMISIÓN · 001 · TRANSMISIÓN DIGITAL
+          </text>
+          <text x="40" y="220" fontFamily="monospace" fontSize="9" fill="#9B1A2A" opacity="0.7" letterSpacing="3">
+            MÚSICA INDEPENDIENTE ESPAÑOLA
+          </text>
 
           <g opacity="0.4" fontFamily="monospace" fontSize="9" fill="#E8E3DB" letterSpacing="2">
             <text x="500" y="120">320 KBPS</text>
@@ -96,7 +109,6 @@ export default function Hero() {
           <rect x="659" y="20" width="1" height="20" fill="#9B1A2A" opacity="0.6"/>
           <rect x="20" y="379" width="20" height="1" fill="#9B1A2A" opacity="0.6"/>
           <rect x="20" y="360" width="1" height="20" fill="#9B1A2A" opacity="0.6"/>
-
 
         </svg>
       </div>
