@@ -17,7 +17,7 @@ export default function Player() {
     title: "Emisión en directo",
     listeners: 0,
   });
-  const [bars, setBars] = useState<number[]>(Array(40).fill(5));
+  const [bars, setBars] = useState<number[]>(Array(48).fill(6));
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const animRef = useRef<number>(0);
@@ -28,6 +28,7 @@ export default function Player() {
       try {
         const res = await fetch(STATION_API);
         const data = await res.json();
+
         setNowPlaying({
           artist: data.now_playing?.song?.artist || "Radio Frecuencia",
           title: data.now_playing?.song?.title || "Emisión en directo",
@@ -41,11 +42,11 @@ export default function Player() {
     return () => clearInterval(interval);
   }, []);
 
-  // Visualizer (simple, estable)
+  // Visualizer animation
   useEffect(() => {
     const animate = () => {
       setBars((prev) =>
-        prev.map(() => Math.max(4, Math.random() * 60))
+        prev.map(() => Math.max(4, Math.random() * 70))
       );
       animRef.current = requestAnimationFrame(animate);
     };
@@ -54,7 +55,7 @@ export default function Player() {
       animRef.current = requestAnimationFrame(animate);
     } else {
       cancelAnimationFrame(animRef.current);
-      setBars((prev) => prev.map((b) => Math.max(4, b * 0.8)));
+      setBars((prev) => prev.map((b) => Math.max(4, b * 0.85)));
     }
 
     return () => cancelAnimationFrame(animRef.current);
@@ -84,34 +85,41 @@ export default function Player() {
   return (
     <section className="bg-[#292524] border-t border-[#E8E3DB]/10">
       <div className="max-w-[1280px] mx-auto px-[24px] md:px-[64px] py-[120px]">
-        <div className="max-w-[720px] flex flex-col gap-[56px]">
+
+        <div className="max-w-[720px] flex flex-col gap-[64px]">
 
           {/* HEADER */}
           <div className="flex justify-between items-center text-[11px] uppercase tracking-[0.2em] font-['Space_Grotesk'] text-[#E8E3DB]/50">
+            
             <div className="flex items-center gap-[10px]">
-              <div className={`w-[6px] h-[6px] ${playing ? "bg-[#9B1A2A]" : "bg-[#E8E3DB]/20"}`} />
+              <div className="relative">
+                <div className={`w-[6px] h-[6px] ${playing ? "bg-[#9B1A2A]" : "bg-[#E8E3DB]/20"}`} />
+                {playing && (
+                  <div className="absolute inset-0 bg-[#9B1A2A] opacity-40 animate-ping" />
+                )}
+              </div>
               <span>{playing ? "EN ANTENA" : "OFFLINE"}</span>
             </div>
 
-            <span>{nowPlaying.listeners} OYENTES · 320KBPS</span>
+            <span>{nowPlaying.listeners} OYENTES · 320KBPS · MADRID</span>
           </div>
 
-          {/* DIVIDER */}
+          {/* LINE */}
           <div className="w-full h-[1px] bg-[#E8E3DB]/10" />
 
           {/* TRACK */}
-          <div className="flex flex-col gap-[8px]">
-            <p className="font-['Newsreader'] text-[56px] md:text-[72px] leading-[1.05] text-[#E8E3DB]">
+          <div className="flex flex-col gap-[10px]">
+            <p className="font-['Newsreader'] text-[64px] md:text-[84px] leading-[1.02] text-[#E8E3DB] tracking-[-0.02em]">
               {nowPlaying.artist}
             </p>
 
-            <p className="font-['Newsreader'] italic text-[20px] md:text-[24px] text-[#E8E3DB]/40">
+            <p className="font-['Newsreader'] italic text-[20px] md:text-[24px] text-[#E8E3DB]/35">
               {nowPlaying.title}
             </p>
           </div>
 
           {/* VISUALIZER */}
-          <div className="flex items-end gap-[2px] h-[60px]">
+          <div className="flex items-end gap-[2px] h-[70px]">
             {bars.map((height, i) => (
               <div
                 key={i}
@@ -122,7 +130,7 @@ export default function Player() {
                     i % 4 === 0
                       ? "#9B1A2A"
                       : "rgba(232,227,219,0.5)",
-                  transition: "height 0.1s linear",
+                  transition: "height 0.08s linear",
                 }}
               />
             ))}
@@ -133,7 +141,7 @@ export default function Player() {
 
             <button
               onClick={togglePlay}
-              className="w-[64px] h-[64px] border border-[#9B1A2A] flex items-center justify-center hover:bg-[#9B1A2A]/10 transition"
+              className="w-[64px] h-[64px] border border-[#9B1A2A] flex items-center justify-center hover:bg-[#9B1A2A]/10 transition-all duration-200"
             >
               {playing ? (
                 <div className="flex gap-[4px]">
@@ -165,6 +173,9 @@ export default function Player() {
             </div>
 
           </div>
+
+          {/* LINE FINAL */}
+          <div className="w-full h-[1px] bg-[#9B1A2A]/40" />
 
         </div>
       </div>
