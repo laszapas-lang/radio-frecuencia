@@ -1,15 +1,11 @@
 export default function Hero() {
   return (
     <>
-      {/* Animaciones (sin globals.css) */}
+      {/* Animaciones */}
       <style jsx global>{`
         @keyframes signalFlow {
           0% { left: -30%; }
           100% { left: 130%; }
-        }
-
-        .animate-signal {
-          animation: signalFlow 5s linear infinite;
         }
 
         @keyframes signalFlowSlow {
@@ -17,8 +13,12 @@ export default function Hero() {
           100% { left: 120%; }
         }
 
+        .animate-signal {
+          animation: signalFlow 6s linear infinite;
+        }
+
         .animate-signal-slow {
-          animation: signalFlowSlow 7s linear infinite;
+          animation: signalFlowSlow 9s linear infinite;
         }
       `}</style>
 
@@ -54,19 +54,19 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Línea de señal animada */}
+        {/* Línea de señal minimal */}
         <div className="w-full h-[200px] md:h-[260px] flex items-center justify-center bg-[#1a1714] overflow-hidden">
           
           <div className="relative w-full max-w-[800px] h-[2px] bg-[#9B1A2A]/20 overflow-hidden">
             
-            {/* línea base */}
-            <div className="absolute inset-0 bg-[#9B1A2A]/30"></div>
+            {/* base sutil */}
+            <div className="absolute inset-0 bg-[#9B1A2A]/20"></div>
 
             {/* señal principal */}
-            <div className="absolute top-0 left-[-30%] w-[30%] h-full bg-gradient-to-r from-transparent via-[#9B1A2A] to-transparent animate-signal"></div>
+            <div className="absolute top-0 left-[-30%] w-[30%] h-full bg-[#9B1A2A] opacity-70 blur-[1px] animate-signal"></div>
 
             {/* señal secundaria */}
-            <div className="absolute top-0 left-[-50%] w-[20%] h-full bg-gradient-to-r from-transparent via-[#9B1A2A]/60 to-transparent animate-signal-slow"></div>
+            <div className="absolute top-0 left-[-50%] w-[20%] h-full bg-[#9B1A2A] opacity-40 blur-[2px] animate-signal-slow"></div>
 
           </div>
         </div>
