@@ -43,13 +43,10 @@ export default function Hero() {
             <line x1="566" y1="0" x2="566" y2="400"/>
           </g>
 
-          <text x="40" y="180" fontFamily="Georgia, serif" fontSize="140" fontStyle="italic" fill="#E8E3DB" opacity="0.04" letterSpacing="-5">RF</text>
-
           <rect x="40" y="195" width="600" height="1" fill="#9B1A2A" opacity="0.6"/>
 
-          <text x="40" y="170" fontFamily="monospace" fontSize="10" fill="#E8E3DB" opacity="0.5" letterSpacing="4">EMISIÓN · 001 · TRANSMISIÓN DIGITAL</text>
-          <text x="40" y="215" fontFamily="Georgia, serif" fontSize="32" fontStyle="italic" fill="#E8E3DB" opacity="0.7">Radio Frecuencia</text>
-          <text x="40" y="240" fontFamily="monospace" fontSize="9" fill="#9B1A2A" opacity="0.8" letterSpacing="3">MÚSICA INDEPENDIENTE ESPAÑOLA</text>
+          <text x="40" y="170" fontFamily="monospace" fontSize="10" fill="#E8E3DB" opacity="0.35" letterSpacing="4">EMISIÓN · 001 · TRANSMISIÓN DIGITAL</text>
+          <text x="40" y="220" fontFamily="monospace" fontSize="9" fill="#9B1A2A" opacity="0.7" letterSpacing="3">MÚSICA INDEPENDIENTE ESPAÑOLA</text>
 
           <g opacity="0.4" fontFamily="monospace" fontSize="9" fill="#E8E3DB" letterSpacing="2">
             <text x="500" y="120">320 KBPS</text>
