@@ -32,86 +32,23 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Imagen editorial abstracta */}
-      <div className="w-full h-[400px] relative overflow-hidden">
-        <svg
-          width="100%"
-          height="100%"
-          viewBox="0 0 680 400"
-          preserveAspectRatio="xMidYMid slice"
-          xmlns="http://www.w3.org/2000/svg"
-          style={{ opacity: 0.85 }}
-        >
-          <rect width="680" height="400" fill="#171514"/>
+      {/* Línea de señal animada */}
+      <div className="w-full h-[200px] md:h-[260px] flex items-center justify-center bg-[#1a1714] overflow-hidden">
+        
+        <div className="relative w-full max-w-[800px] h-[2px] bg-[#9B1A2A]/20 overflow-hidden">
+          
+          {/* línea base */}
+          <div className="absolute inset-0 bg-[#9B1A2A]/30"></div>
 
-          <g stroke="#E8E3DB" strokeWidth="0.3" opacity="0.06">
-            <line x1="113" y1="0" x2="113" y2="400"/>
-            <line x1="226" y1="0" x2="226" y2="400"/>
-            <line x1="340" y1="0" x2="340" y2="400"/>
-            <line x1="453" y1="0" x2="453" y2="400"/>
-            <line x1="566" y1="0" x2="566" y2="400"/>
-          </g>
+          {/* señal principal */}
+          <div className="absolute top-0 left-[-30%] w-[30%] h-full bg-gradient-to-r from-transparent via-[#9B1A2A] to-transparent animate-signal"></div>
 
-          <rect x="40" y="195" width="600" height="1" fill="#9B1A2A" opacity="0.6"/>
+          {/* señal secundaria (profundidad) */}
+          <div className="absolute top-0 left-[-50%] w-[20%] h-full bg-gradient-to-r from-transparent via-[#9B1A2A]/60 to-transparent animate-signal-slow"></div>
 
-          <text x="40" y="170" fontFamily="monospace" fontSize="10" fill="#E8E3DB" opacity="0.35" letterSpacing="4">
-            EMISIÓN · 001 · TRANSMISIÓN DIGITAL
-          </text>
-          <text x="40" y="220" fontFamily="monospace" fontSize="9" fill="#9B1A2A" opacity="0.7" letterSpacing="3">
-            MÚSICA INDEPENDIENTE ESPAÑOLA
-          </text>
-
-          <g opacity="0.4" fontFamily="monospace" fontSize="9" fill="#E8E3DB" letterSpacing="2">
-            <text x="500" y="120">320 KBPS</text>
-            <text x="500" y="140">24 / 7</text>
-            <text x="500" y="160">AAC+</text>
-            <text x="500" y="180">STEREO</text>
-          </g>
-
-          <g stroke="#E8E3DB" strokeWidth="0.4" opacity="0.08">
-            <line x1="500" y1="280" x2="640" y2="280"/>
-            <line x1="500" y1="300" x2="640" y2="300"/>
-            <line x1="500" y1="320" x2="640" y2="320"/>
-            <line x1="500" y1="340" x2="640" y2="340"/>
-            <line x1="500" y1="360" x2="640" y2="360"/>
-            <line x1="500" y1="280" x2="500" y2="360"/>
-            <line x1="520" y1="280" x2="520" y2="360"/>
-            <line x1="540" y1="280" x2="540" y2="360"/>
-            <line x1="560" y1="280" x2="560" y2="360"/>
-            <line x1="580" y1="280" x2="580" y2="360"/>
-            <line x1="600" y1="280" x2="600" y2="360"/>
-            <line x1="620" y1="280" x2="620" y2="360"/>
-            <line x1="640" y1="280" x2="640" y2="360"/>
-          </g>
-
-          <g fill="#9B1A2A" opacity="0.7">
-            <rect x="521" y="281" width="18" height="18"/>
-            <rect x="561" y="301" width="18" height="18"/>
-            <rect x="541" y="321" width="18" height="18"/>
-            <rect x="601" y="281" width="18" height="18"/>
-            <rect x="581" y="341" width="18" height="18"/>
-            <rect x="621" y="321" width="18" height="18"/>
-          </g>
-
-          <g fill="#E8E3DB" opacity="0.08">
-            <rect x="501" y="281" width="18" height="18"/>
-            <rect x="521" y="301" width="18" height="18"/>
-            <rect x="581" y="281" width="18" height="18"/>
-            <rect x="601" y="321" width="18" height="18"/>
-            <rect x="541" y="341" width="18" height="18"/>
-            <rect x="621" y="301" width="18" height="18"/>
-            <rect x="501" y="341" width="18" height="18"/>
-          </g>
-
-          <line x1="40" y1="380" x2="460" y2="270" stroke="#9B1A2A" strokeWidth="0.5" opacity="0.2"/>
-
-          <rect x="640" y="20" width="20" height="1" fill="#9B1A2A" opacity="0.6"/>
-          <rect x="659" y="20" width="1" height="20" fill="#9B1A2A" opacity="0.6"/>
-          <rect x="20" y="379" width="20" height="1" fill="#9B1A2A" opacity="0.6"/>
-          <rect x="20" y="360" width="1" height="20" fill="#9B1A2A" opacity="0.6"/>
-
-        </svg>
+        </div>
       </div>
+
     </div>
   );
 }
