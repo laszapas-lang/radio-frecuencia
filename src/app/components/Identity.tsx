@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
+import {
+  ComposableMap,
+  Geographies,
+  Geography,
+  Marker,
+} from "react-simple-maps";
 
 const STATION_API = "https://TU_AZURACAST.elest.io/api/nowplaying/1";
+
+const geoUrl =
+  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
 export default function Identity() {
   const [listeners, setListeners] = useState(0);
@@ -18,6 +27,15 @@ export default function Identity() {
     const interval = setInterval(fetchListeners, 15000);
     return () => clearInterval(interval);
   }, []);
+
+  // puntos (fake pero realistas)
+  const points = [
+    { coordinates: [-3.7, 40.4] },   // Madrid
+    { coordinates: [-99.1, 19.4] },  // México
+    { coordinates: [-58.4, -34.6] }, // Buenos Aires
+    { coordinates: [-74, 40.7] },    // Nueva York
+    { coordinates: [2.3, 48.8] },    // París
+  ];
 
   return (
     <div className="bg-[#292524] py-[120px]">
@@ -45,41 +63,43 @@ export default function Identity() {
               </p>
             </div>
 
-            {/* MAPA (más pequeño) */}
-            <div className="w-full h-[240px] relative overflow-hidden bg-[#1a1714]">
+            {/* MAPA REAL */}
+            <div className="w-full h-[240px] bg-[#1a1714]">
 
-              {/* MAPA REAL SIMPLIFICADO */}
-              <svg
-                viewBox="0 0 1000 500"
-                className="w-full h-full opacity-[0.12]"
+              <ComposableMap
+                projectionConfig={{ scale: 130 }}
+                style={{ width: "100%", height: "100%" }}
               >
-                <path
-                  d="M120 250 L180 200 L240 210 L280 180 L320 200 L340 240 L300 270 L250 280 L200 270 Z
-                     M380 230 L450 200 L520 210 L560 190 L620 210 L650 250 L600 280 L520 270 L450 260 Z
-                     M700 240 L740 220 L780 230 L800 260 L760 280 L720 270 Z"
-                  fill="#E8E3DB"
-                />
-              </svg>
+                <Geographies geography={geoUrl}>
+                  {({ geographies }) =>
+                    geographies.map((geo) => (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        fill="#E8E3DB"
+                        stroke="none"
+                        style={{
+                          default: { opacity: 0.08 },
+                          hover: { opacity: 0.15 },
+                        }}
+                      />
+                    ))
+                  }
+                </Geographies>
 
-              {/* PUNTOS ROJOS */}
-              <div className="absolute inset-0">
-                {[
-                  { left: "22%", top: "55%" },
-                  { left: "48%", top: "60%" },
-                  { left: "68%", top: "50%" },
-                  { left: "80%", top: "65%" },
-                ].map((p, i) => (
-                  <div
-                    key={i}
-                    className="absolute w-[6px] h-[6px] bg-[#9B1A2A] rounded-full"
-                    style={{
-                      left: p.left,
-                      top: p.top,
-                      boxShadow: "0 0 12px #9B1A2A",
-                    }}
-                  />
+                {/* PUNTOS */}
+                {points.map((point, i) => (
+                  <Marker key={i} coordinates={point.coordinates}>
+                    <circle
+                      r={3}
+                      fill="#9B1A2A"
+                      style={{
+                        filter: "drop-shadow(0 0 6px #9B1A2A)",
+                      }}
+                    />
+                  </Marker>
                 ))}
-              </div>
+              </ComposableMap>
 
             </div>
 
