@@ -39,7 +39,7 @@ export default function Hero() {
        
         <div className="max-w-[1280px] mx-auto px-[24px] md:px-[64px] py-[48px] flex flex-col gap-[16px]">
          
-          {/* Línea roja (NO TOCADA) */}
+          {/* Línea roja */}
           <div className="w-full h-[1px] bg-[#9B1A2A]" />
 
           {/* Texto técnico */}
@@ -49,69 +49,7 @@ export default function Hero() {
 
         </div>
 
-        {/* NUEVO BLOQUE MAPA */}
-        <div className="max-w-[1280px] mx-auto px-[24px] md:px-[64px] pb-[80px]">
-
-          <div className="w-full h-[320px] relative overflow-hidden">
-
-            {/* textura tipo mapa */}
-            <svg
-              viewBox="0 0 800 400"
-              className="w-full h-full opacity-[0.12]"
-            >
-              <path
-                d="M50 200 C150 150, 250 250, 350 200 S550 150, 750 220"
-                stroke="#E8E3DB"
-                strokeWidth="1"
-                fill="none"
-              />
-              <path
-                d="M100 300 C200 260, 300 320, 400 300 S600 260, 700 300"
-                stroke="#E8E3DB"
-                strokeWidth="1"
-                fill="none"
-              />
-            </svg>
-
-            {/* puntos (oyentes) */}
-            <div className="absolute inset-0">
-              {[
-                { left: "20%", top: "40%", delay: "0s" },
-                { left: "40%", top: "55%", delay: "0.5s" },
-                { left: "65%", top: "35%", delay: "1s" },
-                { left: "80%", top: "60%", delay: "0.8s" },
-              ].map((p, i) => (
-                <div
-                  key={i}
-                  className="absolute"
-                  style={{ left: p.left, top: p.top }}
-                >
-                  <div
-                    className="w-[6px] h-[6px] bg-[#9B1A2A] rounded-full"
-                    style={{
-                      boxShadow: "0 0 20px #9B1A2A",
-                      animation: `pulse 2.5s infinite`,
-                      animationDelay: p.delay,
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-
-          </div>
-
-        </div>
-
       </div>
-
-      {/* animación */}
-      <style jsx global>{`
-        @keyframes pulse {
-          0% { transform: scale(0.8); opacity: 0.4; }
-          50% { transform: scale(1.6); opacity: 1; }
-          100% { transform: scale(0.8); opacity: 0.4; }
-        }
-      `}</style>
 
     </div>
   );
