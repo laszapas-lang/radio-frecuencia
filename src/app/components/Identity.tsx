@@ -28,12 +28,13 @@ export default function Identity() {
     return () => clearInterval(interval);
   }, []);
 
+  // Puntos fake (puedes cambiarlos luego)
   const points = [
-    { coordinates: [-3.7, 40.4] },
-    { coordinates: [-99.1, 19.4] },
-    { coordinates: [-58.4, -34.6] },
-    { coordinates: [-74, 40.7] },
-    { coordinates: [2.3, 48.8] },
+    { coordinates: [-3.7, 40.4] },   // Madrid
+    { coordinates: [-99.1, 19.4] },  // México
+    { coordinates: [-58.4, -34.6] }, // Buenos Aires
+    { coordinates: [-74, 40.7] },    // NY
+    { coordinates: [2.3, 48.8] },    // París
   ];
 
   return (
@@ -49,7 +50,7 @@ export default function Identity() {
           <div className="w-[120px] h-[2px] bg-[#9B1A2A]" />
 
           {/* BLOQUE MAPA */}
-          <div className="flex flex-col gap-[20px] max-w-[420px]">
+          <div className="flex flex-col gap-[20px] max-w-[480px]">
 
             {/* HEADER */}
             <div className="flex justify-between items-center">
@@ -62,11 +63,12 @@ export default function Identity() {
               </p>
             </div>
 
-            {/* MAPA */}
-            <div className="w-[420px] h-[420px] bg-[#1a1714]">
+            {/* MAPA (PROPORCIÓN CORRECTA) */}
+            <div className="w-[480px] aspect-[2/1] bg-[#1a1714] overflow-hidden">
 
               <ComposableMap
-                projectionConfig={{ scale: 200 }}
+                projection="geoMercator"
+                projectionConfig={{ scale: 140 }}
                 style={{ width: "100%", height: "100%" }}
               >
                 <Geographies geography={geoUrl}>
