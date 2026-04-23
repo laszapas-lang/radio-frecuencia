@@ -6,7 +6,7 @@ export default function Identity() {
       <div className="max-w-[1280px] mx-auto px-[64px]">
         <div className="max-w-[900px] flex flex-col gap-[48px]">
           <p className="font-['Newsreader',serif] italic text-[42px] leading-[1.5] text-[#E8E3DB]">
-            Selección alternativa de música en español. Sin interrupciones. Un refugio sonoro contra el algoritmo, diseñado para la escucha atenta y la apreciación del ruido con intención.
+            Selección de música en español. Sin interrupciones.
           </p>
 
           <div className="w-[120px] h-[2px] bg-[#9B1A2A]" />
