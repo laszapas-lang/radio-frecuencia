@@ -1,7 +1,6 @@
 return (
   <section className="bg-[#292524] border-t border-[#E8E3DB]/10">
     <div className="max-w-[1280px] mx-auto px-[24px] md:px-[64px] py-[120px]">
-
       <div className="max-w-[720px] flex flex-col gap-[56px]">
 
         {/* HEADER */}
@@ -19,7 +18,6 @@ return (
 
         {/* TRACK INFO */}
         <div className="flex flex-col gap-[8px]">
-
           <p className="font-['Newsreader'] text-[56px] md:text-[72px] leading-[1.05] text-[#E8E3DB]">
             {nowPlaying.artist}
           </p>
@@ -27,10 +25,9 @@ return (
           <p className="font-['Newsreader'] italic text-[20px] md:text-[24px] text-[#E8E3DB]/40">
             {nowPlaying.title}
           </p>
-
         </div>
 
-        {/* VISUALIZER (TUYO, NO TOCADO) */}
+        {/* VISUALIZER */}
         <div className="flex items-end gap-[2px] h-[60px]">
           {bars.map((height, i) => (
             <div
@@ -51,7 +48,6 @@ return (
         {/* CONTROLES */}
         <div className="flex items-center justify-between">
 
-          {/* PLAY */}
           <button
             onClick={togglePlay}
             className="w-[64px] h-[64px] border border-[#9B1A2A] flex items-center justify-center hover:bg-[#9B1A2A]/10 transition"
@@ -66,7 +62,6 @@ return (
             )}
           </button>
 
-          {/* VOLUMEN + META */}
           <div className="flex items-center gap-[24px]">
 
             <input
