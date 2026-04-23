@@ -97,7 +97,7 @@ export default function Hero() {
           <rect x="20" y="379" width="20" height="1" fill="#9B1A2A" opacity="0.6"/>
           <rect x="20" y="360" width="1" height="20" fill="#9B1A2A" opacity="0.6"/>
 
-          <text x="42" y="390" fontFamily="monospace" fontSize="8" fill="#E8E3DB" opacity="0.15" letterSpacing="2">X:000 Y:000 · © RADIO FRECUENCIA</text>
+
         </svg>
       </div>
     </div>
