@@ -60,19 +60,21 @@ export default function Player() {
     return () => clearInterval(interval);
   }, []);
 
-  // Tick local — avanza 1 segundo entre fetches para que sea fluido
+  // Tick local — solo avanza cuando está reproduciendo
   useEffect(() => {
     if (tickRef.current) clearInterval(tickRef.current);
 
-    tickRef.current = setInterval(() => {
-      elapsedRef.current += 1;
-      setElapsed(elapsedRef.current);
-    }, 1000);
+    if (playing) {
+      tickRef.current = setInterval(() => {
+        elapsedRef.current += 1;
+        setElapsed(elapsedRef.current);
+      }, 1000);
+    }
 
     return () => {
       if (tickRef.current) clearInterval(tickRef.current);
     };
-  }, []);
+  }, [playing]);
 
   const togglePlay = () => {
     if (!audioRef.current) {
@@ -115,7 +117,7 @@ export default function Player() {
               <div className="w-[6px] h-[6px] bg-[#9B1A2A]" />
               AHORA SUENA
             </div>
-            <div>LATENCIA: 24MS / 320KBPS</div>
+            <div>LATENCY: 24MS / 320KBPS</div>
           </div>
 
           {/* TRACK INFO */}
@@ -177,7 +179,7 @@ export default function Player() {
               </div>
               <div className="flex justify-between text-[11px] text-[#E8E3DB]/40 font-['Space_Grotesk']">
                 <span>{formatTime(elapsed)}</span>
-                <span>{formatTime(remaining)}</span>
+                <span>{formatTime(duration)}</span>
               </div>
             </div>
 
