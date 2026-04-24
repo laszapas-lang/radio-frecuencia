@@ -21,7 +21,7 @@ export default function Player() {
   const ctxRef = useRef<AudioContext | null>(null);
   const animRef = useRef<number>(0);
 
-  // 📡 FETCH
+  // FETCH
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -41,7 +41,7 @@ export default function Player() {
     return () => clearInterval(i);
   }, []);
 
-  // 🎧 VISUALIZER
+  // VISUALIZER
   useEffect(() => {
     const animate = () => {
       if (!analyserRef.current || !dataRef.current) return;
@@ -64,7 +64,7 @@ export default function Player() {
     return () => cancelAnimationFrame(animRef.current);
   }, [playing]);
 
-  // ▶️ PLAY / PAUSE
+  // PLAY
   const togglePlay = () => {
     if (!audioRef.current) {
       const audio = new Audio(STREAM_URL);
@@ -97,14 +97,12 @@ export default function Player() {
     }
   };
 
-  // 🔇 MUTE
   const toggleMute = () => {
     if (!audioRef.current) return;
     audioRef.current.muted = !muted;
     setMuted(!muted);
   };
 
-  // 🔊 VOLUME
   const changeVolume = (v: number) => {
     setVolume(v);
     if (audioRef.current) {
@@ -122,24 +120,24 @@ export default function Player() {
 
           {/* HEADER */}
           <div className="flex justify-between text-[11px] tracking-[0.2em] uppercase text-[#E8E3DB]/50">
-            <span>AHORA SUENA</span>
+            
+            <div className="flex items-center gap-[10px]">
+              <div className="w-[6px] h-[6px] bg-[#9B1A2A]" />
+              <span>AHORA SUENA</span>
+            </div>
+
             <span>LATENCY: 24MS / 320KBPS</span>
           </div>
 
           {/* INFO */}
           <div className="flex gap-[32px] items-center">
 
-            {/* COVER */}
             <div className="w-[110px] h-[110px] bg-black border border-[#E8E3DB]/20 overflow-hidden">
               {nowPlaying.art && (
-                <img
-                  src={nowPlaying.art}
-                  className="w-full h-full object-cover grayscale"
-                />
+                <img src={nowPlaying.art} className="w-full h-full object-cover grayscale" />
               )}
             </div>
 
-            {/* TEXTO + ONDAS */}
             <div className="flex-1 flex justify-between items-center">
 
               <div>
@@ -151,7 +149,6 @@ export default function Player() {
                 </p>
               </div>
 
-              {/* ONDAS */}
               <div className="flex items-end gap-[2px] h-[40px]">
                 {bars.map((h, i) => (
                   <div
@@ -170,10 +167,10 @@ export default function Player() {
 
           </div>
 
-          {/* CONTROLES */}
+          {/* CONTROLES PRINCIPALES */}
           <div className="flex items-center gap-[24px]">
 
-            {/* PLAY / PAUSE */}
+            {/* PLAY */}
             <button
               onClick={togglePlay}
               className="w-[70px] h-[70px] bg-[#9B1A2A] flex items-center justify-center"
@@ -188,50 +185,49 @@ export default function Player() {
               )}
             </button>
 
-            {/* LÍNEA */}
-            <div className="flex-1 h-[2px] bg-[#E8E3DB]/20 relative">
-              <div
-                className="absolute left-0 top-0 h-full bg-[#9B1A2A]"
-                style={{ width: "40%" }}
-              />
-            </div>
+            {/* BARRA */}
+            <div className="flex-1 flex flex-col gap-[8px]">
 
-            {/* AUDIO CONTROLS */}
-            <div className="flex items-center gap-[16px] ml-auto">
+              <div className="h-[2px] bg-[#E8E3DB]/20 relative">
+                <div className="absolute left-0 top-0 h-full bg-[#9B1A2A]" style={{ width: "40%" }} />
+              </div>
 
-              {/* MUTE */}
-              <button
-                onClick={toggleMute}
-                className="opacity-60 hover:opacity-100 transition"
-              >
-                {muted ? (
-                  <div className="w-[14px] h-[14px] border border-[#E8E3DB]" />
-                ) : (
-                  <div className="w-[14px] h-[14px] border border-[#E8E3DB] relative">
-                    <div className="absolute right-[-4px] top-[3px] w-[4px] h-[4px] bg-[#E8E3DB]" />
+              {/* TIEMPOS + AUDIO */}
+              <div className="flex justify-between items-center text-[11px] text-[#E8E3DB]/40">
+
+                <span>02:45</span>
+
+                <div className="flex items-center gap-[16px]">
+
+                  {/* MUTE */}
+                  <button onClick={toggleMute} className="opacity-60 hover:opacity-100">
+                    <div className="w-[12px] h-[12px] border border-[#E8E3DB]" />
+                  </button>
+
+                  {/* VOLUME */}
+                  <div className="flex items-end gap-[2px]">
+                    {[0.2, 0.4, 0.6, 0.8, 1].map((v, i) => (
+                      <div
+                        key={i}
+                        onClick={() => changeVolume(v)}
+                        className={`w-[3px] cursor-pointer ${
+                          volume >= v ? "bg-[#E8E3DB]" : "bg-[#E8E3DB]/20"
+                        }`}
+                        style={{ height: `${6 + i * 4}px` }}
+                      />
+                    ))}
                   </div>
-                )}
-              </button>
 
-              {/* VOLUME BARS */}
-              <div className="flex items-end gap-[2px]">
-                {[0.2, 0.4, 0.6, 0.8, 1].map((v, i) => (
-                  <div
-                    key={i}
-                    onClick={() => changeVolume(v)}
-                    className={`w-[3px] cursor-pointer ${
-                      volume >= v ? "bg-[#E8E3DB]" : "bg-[#E8E3DB]/20"
-                    }`}
-                    style={{ height: `${6 + i * 4}px` }}
-                  />
-                ))}
+                </div>
+
+                <span>05:12</span>
+
               </div>
 
             </div>
 
           </div>
 
-          {/* FOOTER */}
           <div className="text-[10px] tracking-[0.2em] uppercase text-[#E8E3DB]/40">
             EMISIÓN CONTINUA · 24/7
           </div>
