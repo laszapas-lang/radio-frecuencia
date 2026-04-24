@@ -41,9 +41,10 @@ export default function Player() {
     playingRef.current = playing;
   }, [playing]);
 
-  // FETCH
+  // FETCH — solo actualiza cuando está reproduciendo
   useEffect(() => {
     const fetchNowPlaying = async () => {
+      if (!playingRef.current) return;
       try {
         const res = await fetch(STATION_API);
         const data = await res.json();
@@ -63,7 +64,6 @@ export default function Player() {
     const interval = setInterval(fetchNowPlaying, 15000);
     return () => clearInterval(interval);
   }, []);
-
   // TICK
   useEffect(() => {
     if (tickRef.current) clearInterval(tickRef.current);
