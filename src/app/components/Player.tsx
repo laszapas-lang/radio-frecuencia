@@ -5,14 +5,12 @@ const STATION_API = "https://radioweb-u71993.vm.elestio.app/api/nowplaying/1";
 
 export default function Player() {
   const [playing, setPlaying] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [volume, setVolume] = useState(0.8);
   const [bars, setBars] = useState<number[]>(Array(40).fill(4));
 
   const [nowPlaying, setNowPlaying] = useState({
     artist: "Radio Frecuencia",
-    title: "Emisión en directo",
-    listeners: 0,
+    title: "En directo",
     art: "",
   });
 
@@ -22,7 +20,7 @@ export default function Player() {
   const ctxRef = useRef<AudioContext | null>(null);
   const animRef = useRef<number>(0);
 
-  // 📡 FETCH NOW PLAYING
+  // FETCH
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -32,7 +30,6 @@ export default function Player() {
         setNowPlaying({
           artist: data.now_playing?.song?.artist || "Radio Frecuencia",
           title: data.now_playing?.song?.title || "En directo",
-          listeners: data.listeners?.current || 0,
           art: data.now_playing?.song?.art || "",
         });
       } catch {}
@@ -43,7 +40,7 @@ export default function Player() {
     return () => clearInterval(i);
   }, []);
 
-  // 🎧 VISUALIZER (ondas arriba, discretas)
+  // VISUALIZER
   useEffect(() => {
     const animate = () => {
       if (!analyserRef.current || !dataRef.current) return;
@@ -54,7 +51,7 @@ export default function Player() {
 
       const newBars = Array(40).fill(0).map((_, i) => {
         const v = values[i * step];
-        return Math.max(4, (v / 255) * 30);
+        return Math.max(3, (v / 255) * 25);
       });
 
       setBars(newBars);
@@ -66,7 +63,7 @@ export default function Player() {
     return () => cancelAnimationFrame(animRef.current);
   }, [playing]);
 
-  // ▶️ PLAY / PAUSE
+  // PLAY
   const togglePlay = () => {
     if (!audioRef.current) {
       const audio = new Audio(STREAM_URL);
@@ -95,64 +92,53 @@ export default function Player() {
       ctxRef.current = null;
       setPlaying(false);
     } else {
-      setLoading(true);
-
-      audioRef.current.play()
-        .then(() => {
-          setPlaying(true);
-          setLoading(false);
-        })
-        .catch(() => setLoading(false));
+      audioRef.current.play().then(() => setPlaying(true));
     }
   };
 
   return (
-    <section className="bg-[#1a1714] py-[120px]">
+    <section className="bg-[#14110f] py-[120px] text-[#E8E3DB]">
       <div className="max-w-[1100px] mx-auto px-[40px]">
 
-        {/* PANEL */}
-        <div className="border border-[#E8E3DB]/10 p-[48px] flex flex-col gap-[40px]">
+        <div className="border border-[#E8E3DB]/10 p-[56px] flex flex-col gap-[48px]">
 
           {/* HEADER */}
-          <div className="flex justify-between text-[11px] uppercase tracking-[0.2em] text-[#E8E3DB]/50">
+          <div className="flex justify-between text-[11px] tracking-[0.2em] uppercase text-[#E8E3DB]/50">
             <span>AHORA SUENA</span>
-            <span>{nowPlaying.listeners} OYENTES</span>
+            <span>LATENCY: 24MS / 320KBPS</span>
           </div>
 
-          {/* INFO + ONDAS */}
+          {/* INFO */}
           <div className="flex gap-[32px] items-center">
 
             {/* COVER */}
-            <div className="w-[110px] h-[110px] bg-black border border-[#E8E3DB]/20 overflow-hidden">
+            <div className="w-[110px] h-[110px] bg-black border border-[#E8E3DB]/20">
               {nowPlaying.art && (
-                <img
-                  src={nowPlaying.art}
-                  className="w-full h-full object-cover grayscale"
-                />
+                <img src={nowPlaying.art} className="w-full h-full object-cover grayscale" />
               )}
             </div>
 
-            {/* TEXTO + ONDAS */}
+            {/* TEXT + ONDAS */}
             <div className="flex-1 flex justify-between items-center">
 
               <div>
-                <h1 className="text-[56px] text-[#E8E3DB] font-['Newsreader'] leading-none">
+                <h1 className="text-[72px] leading-none font-['Newsreader']">
                   {nowPlaying.artist}
                 </h1>
-                <p className="text-[#E8E3DB]/40 italic mt-[8px]">
+                <p className="italic text-[#E8E3DB]/40 mt-[8px] text-[22px]">
                   {nowPlaying.title}
                 </p>
               </div>
 
               {/* ONDAS */}
-              <div className="flex items-end gap-[2px] h-[40px] ml-[40px]">
+              <div className="flex items-end gap-[2px] h-[40px]">
                 {bars.map((h, i) => (
                   <div
                     key={i}
                     style={{
                       width: 2,
                       height: `${h}px`,
-                      background: i % 6 === 0 ? "#9B1A2A" : "#E8E3DB",
+                      background: i % 5 === 0 ? "#9B1A2A" : "#E8E3DB",
                       opacity: 0.7,
                     }}
                   />
@@ -169,23 +155,26 @@ export default function Player() {
             {/* PLAY */}
             <button
               onClick={togglePlay}
-              className="w-[64px] h-[64px] bg-[#9B1A2A] flex items-center justify-center text-white"
+              className="w-[70px] h-[70px] bg-[#9B1A2A] flex items-center justify-center"
             >
-              {playing ? "II" : "▶"}
+              <div className="w-0 h-0 border-l-[14px] border-l-white border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent ml-[4px]" />
             </button>
 
-            {/* LÍNEA PROGRESO */}
+            {/* LÍNEA */}
             <div className="flex-1 h-[2px] bg-[#E8E3DB]/20 relative">
-              <div
-                className="absolute left-0 top-0 h-full bg-[#9B1A2A]"
-                style={{ width: "40%" }}
-              />
+              <div className="absolute left-0 top-0 h-full bg-[#9B1A2A]" style={{ width: "40%" }} />
+            </div>
+
+            {/* VOLUMEN ICONOS */}
+            <div className="flex items-center gap-[10px] opacity-60 text-sm">
+              <span>🔇</span>
+              <span>🔊</span>
             </div>
 
           </div>
 
           {/* FOOTER */}
-          <div className="text-[10px] uppercase tracking-[0.2em] text-[#E8E3DB]/40">
+          <div className="text-[10px] tracking-[0.2em] uppercase text-[#E8E3DB]/40">
             EMISIÓN CONTINUA · 24/7
           </div>
 
