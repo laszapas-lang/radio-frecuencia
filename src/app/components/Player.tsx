@@ -30,10 +30,16 @@ export default function Player() {
   const animRef = useRef<number>(0);
   const phaseRef = useRef(0);
   const ampsRef = useRef(Array.from({ length: 8 }, () => Math.random() * 16 + 5));
+  // Usamos ref para que el loop de animación lea siempre el valor actual
   const playingRef = useRef(false);
 
   const duration = track.duration || 1;
   const progress = Math.min((elapsed / duration) * 100, 100);
+
+  // Mantener playingRef sincronizado
+  useEffect(() => {
+    playingRef.current = playing;
+  }, [playing]);
 
   // FETCH
   useEffect(() => {
@@ -70,11 +76,7 @@ export default function Player() {
     return () => { if (tickRef.current) clearInterval(tickRef.current); };
   }, [playing]);
 
-  // VISUALIZER — onda continua
-  useEffect(() => {
-    playingRef.current = playing;
-  }, [playing]);
-
+  // VISUALIZER — arranca una sola vez, lee playingRef en cada frame
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -90,19 +92,18 @@ export default function Player() {
       ctx.clearRect(0, 0, W, H);
 
       if (playingRef.current) {
-        phaseRef.current += 0.035;
-        if (Math.random() < 0.04) {
-          ampsRef.current = ampsRef.current.map(() => Math.random() * 16 + 5);
+        phaseRef.current += 0.05;
+        if (Math.random() < 0.05) {
+          ampsRef.current = ampsRef.current.map(() => Math.random() * 14 + 4);
         }
       } else {
-        // En pause las ondas se aplanan suavemente
-        ampsRef.current = ampsRef.current.map(a => Math.max(a * 0.97, 0.5));
+        ampsRef.current = ampsRef.current.map(a => Math.max(a * 0.96, 0.4));
       }
 
       const amps = ampsRef.current;
       const phase = phaseRef.current;
 
-      // Onda principal — crema
+      // Onda principal
       ctx.beginPath();
       for (let x = 0; x < W; x++) {
         let y = H / 2;
@@ -116,7 +117,7 @@ export default function Player() {
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Onda secundaria — roja
+      // Onda roja secundaria
       ctx.beginPath();
       for (let x = 0; x < W; x++) {
         let y = H / 2;
@@ -137,7 +138,7 @@ export default function Player() {
 
     animRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animRef.current);
-  }, []);
+  }, []); // solo una vez al montar
 
   const togglePlay = () => {
     if (!audioRef.current) {
@@ -183,9 +184,10 @@ export default function Player() {
             <div>LATENCY: 24MS / 320KBPS</div>
           </div>
 
-          {/* TRACK INFO */}
-          <div className="mt-[40px]">
-            <div className="flex gap-[24px]">
+          {/* TRACK INFO + VISUALIZER en la misma fila */}
+          <div className="flex justify-between items-center mt-[40px]">
+
+            <div className="flex gap-[24px] items-center">
               {track.artwork && (
                 <img src={track.artwork} alt="" className="w-[90px] h-[90px] object-cover" />
               )}
@@ -198,21 +200,21 @@ export default function Player() {
                 </p>
               </div>
             </div>
-          </div>
 
-          {/* VISUALIZER — onda continua */}
-          <div className="mt-[40px]">
-            <canvas
-              ref={canvasRef}
-              width={900}
-              height={48}
-              className="w-full"
-              style={{ height: "48px" }}
-            />
+            {/* VISUALIZER — solo desktop, a la derecha */}
+            <div className="hidden md:block shrink-0 ml-[40px]">
+              <canvas
+                ref={canvasRef}
+                width={200}
+                height={48}
+                style={{ width: "200px", height: "48px", display: "block" }}
+              />
+            </div>
+
           </div>
 
           {/* FILA PLAY + PROGRESO */}
-          <div className="flex items-center gap-[20px] mt-[32px]">
+          <div className="flex items-center gap-[20px] mt-[50px]">
             <button
               onClick={togglePlay}
               className="w-[64px] h-[64px] shrink-0 bg-[#9B1A2A] flex items-center justify-center hover:bg-[#7a1522] transition-colors duration-200"
