@@ -20,13 +20,11 @@ export default function Player() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // FETCH DATA
   useEffect(() => {
     const fetchNowPlaying = async () => {
       try {
         const res = await fetch(STATION_API);
         const data = await res.json();
-
         setTrack({
           artist: data.now_playing?.song?.artist || "Radio Frecuencia",
           title: data.now_playing?.song?.title || "Emisión en directo",
@@ -34,37 +32,31 @@ export default function Player() {
         });
       } catch {}
     };
-
     fetchNowPlaying();
     const interval = setInterval(fetchNowPlaying, 15000);
     return () => clearInterval(interval);
   }, []);
 
-  // PLAY / PAUSE
   const togglePlay = () => {
     if (!audioRef.current) {
       audioRef.current = new Audio(STREAM_URL);
       audioRef.current.volume = volume;
       audioRef.current.muted = muted;
     }
-
     if (playing) {
       audioRef.current.pause();
     } else {
       audioRef.current.play().catch(() => {});
     }
-
     setPlaying(!playing);
   };
 
-  // MUTE
   const toggleMute = () => {
     if (!audioRef.current) return;
     audioRef.current.muted = !muted;
     setMuted(!muted);
   };
 
-  // VOLUME
   const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseFloat(e.target.value);
     setVolume(v);
@@ -78,7 +70,6 @@ export default function Player() {
   return (
     <section id="player" className="bg-[#292524] border-t border-[#E8E3DB]/10">
       <div className="max-w-[1280px] mx-auto px-[24px] md:px-[64px] py-[100px]">
-
         <div className="border border-[#E8E3DB]/10 p-[32px] md:p-[48px]">
 
           {/* HEADER */}
@@ -90,17 +81,11 @@ export default function Player() {
             <div>LATENCY: 24MS / 320KBPS</div>
           </div>
 
-          {/* CONTENIDO */}
+          {/* TRACK INFO */}
           <div className="flex justify-between items-start mt-[40px]">
-
-            {/* IZQUIERDA */}
             <div className="flex gap-[24px]">
               {track.artwork && (
-                <img
-                  src={track.artwork}
-                  alt=""
-                  className="w-[90px] h-[90px] object-cover"
-                />
+                <img src={track.artwork} alt="" className="w-[90px] h-[90px] object-cover" />
               )}
               <div>
                 <h1 className="font-['Newsreader'] italic text-[48px] md:text-[64px] leading-none text-[#E8E3DB]">
@@ -125,10 +110,9 @@ export default function Player() {
                 />
               ))}
             </div>
-
           </div>
 
-          {/* PLAYER */}
+          {/* FILA PLAY + PROGRESO — centrados verticalmente */}
           <div className="flex items-center gap-[20px] mt-[50px]">
 
             {/* PLAY */}
@@ -146,85 +130,83 @@ export default function Player() {
               )}
             </button>
 
-            {/* BLOQUE DERECHA */}
+            {/* PROGRESO + TIEMPOS */}
             <div className="flex-1 flex flex-col gap-[10px]">
-
-              {/* BARRA DE PROGRESO */}
               <div className="w-full h-[1px] bg-[#E8E3DB]/20 relative">
                 <div
                   className="absolute top-0 left-0 h-full bg-[#9B1A2A]"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-
-              {/* TIEMPOS */}
               <div className="flex justify-between text-[11px] text-[#E8E3DB]/40 font-['Space_Grotesk']">
                 <span>{currentTime}</span>
                 <span>{duration}</span>
-              </div>
-
-              {/* MUTE + VOLUMEN */}
-              <div className="flex justify-end items-center gap-[12px] mt-[6px]">
-
-                {/* ICONO MUTE */}
-                <button
-                  onClick={toggleMute}
-                  className="flex items-center justify-center w-[20px] h-[20px] opacity-60 hover:opacity-100 transition-opacity duration-200"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M3 10V14H7L12 19V5L7 10H3Z"
-                      stroke="#E8E3DB"
-                      strokeWidth="1.5"
-                      strokeLinejoin="round"
-                    />
-                    {muted ? (
-                      <>
-                        <line x1="18" y1="9" x2="23" y2="14" stroke="#E8E3DB" strokeWidth="1.5" strokeLinecap="round" />
-                        <line x1="23" y1="9" x2="18" y2="14" stroke="#E8E3DB" strokeWidth="1.5" strokeLinecap="round" />
-                      </>
-                    ) : (
-                      <path
-                        d="M16 9C17.5 10.5 17.5 13.5 16 15"
-                        stroke="#E8E3DB"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      />
-                    )}
-                  </svg>
-                </button>
-
-                {/* SLIDER DE VOLUMEN */}
-                <div className="flex items-center w-[100px] h-[20px]">
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={muted ? 0 : volume}
-                    onChange={handleVolume}
-                    className="w-full h-[2px] appearance-none cursor-pointer"
-                    style={{
-                      accentColor: "#9B1A2A",
-                      background: `linear-gradient(to right, #9B1A2A ${(muted ? 0 : volume) * 100}%, rgba(232,227,219,0.2) ${(muted ? 0 : volume) * 100}%)`,
-                    }}
-                  />
-                </div>
-
               </div>
             </div>
 
           </div>
 
-          {/* FOOT */}
-          <div className="text-[11px] text-[#E8E3DB]/40 mt-[40px] uppercase tracking-[0.2em] font-['Space_Grotesk']">
-            EMISIÓN CONTINUA · 24/7
+          {/* FILA INFERIOR — EMISIÓN CONTINUA a la izq, MUTE+VOLUMEN a la der */}
+          <div className="flex items-center justify-between mt-[24px]">
+
+            <div className="text-[11px] text-[#E8E3DB]/40 uppercase tracking-[0.2em] font-['Space_Grotesk']">
+              EMISIÓN CONTINUA · 24/7
+            </div>
+
+            <div className="flex items-center gap-[12px]">
+
+              {/* MUTE */}
+              <button
+                onClick={toggleMute}
+                className="flex items-center justify-center w-[20px] h-[20px] opacity-60 hover:opacity-100 transition-opacity duration-200"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M3 10V14H7L12 19V5L7 10H3Z"
+                    stroke="#E8E3DB"
+                    strokeWidth="1.5"
+                    strokeLinejoin="round"
+                  />
+                  {muted ? (
+                    <>
+                      <line x1="18" y1="9" x2="23" y2="14" stroke="#E8E3DB" strokeWidth="1.5" strokeLinecap="round" />
+                      <line x1="23" y1="9" x2="18" y2="14" stroke="#E8E3DB" strokeWidth="1.5" strokeLinecap="round" />
+                    </>
+                  ) : (
+                    <path
+                      d="M16 9C17.5 10.5 17.5 13.5 16 15"
+                      stroke="#E8E3DB"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  )}
+                </svg>
+              </button>
+
+              {/* SLIDER VOLUMEN */}
+              <div className="flex items-center w-[100px] h-[20px]">
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={muted ? 0 : volume}
+                  onChange={handleVolume}
+                  className="w-full appearance-none cursor-pointer"
+                  style={{
+                    height: "2px",
+                    accentColor: "#9B1A2A",
+                    background: `linear-gradient(to right, #9B1A2A ${(muted ? 0 : volume) * 100}%, rgba(232,227,219,0.2) ${(muted ? 0 : volume) * 100}%)`,
+                  }}
+                />
+              </div>
+
+            </div>
           </div>
 
         </div>
       </div>
 
-      {/* CSS para el thumb del slider */}
       <style>{`
         input[type="range"]::-webkit-slider-thumb {
           -webkit-appearance: none;
