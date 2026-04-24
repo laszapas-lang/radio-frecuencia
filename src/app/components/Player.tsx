@@ -16,12 +16,8 @@ export default function Player() {
   });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataRef = useRef<Uint8Array | null>(null);
-  const ctxRef = useRef<AudioContext | null>(null);
-  const animRef = useRef<number>(0);
 
-  // FETCH
+  // FETCH DATA
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -41,59 +37,36 @@ export default function Player() {
     return () => clearInterval(i);
   }, []);
 
-  // VISUALIZER
+  // FAKE VISUALIZER
   useEffect(() => {
+    let raf: number;
+
     const animate = () => {
-      if (!analyserRef.current || !dataRef.current) return;
-
-      analyserRef.current.getByteFrequencyData(dataRef.current);
-      const values = Array.from(dataRef.current);
-      const step = Math.floor(values.length / 40);
-
-      const newBars = Array(40).fill(0).map((_, i) => {
-        const v = values[i * step];
-        return Math.max(3, (v / 255) * 25);
-      });
-
-      setBars(newBars);
-      animRef.current = requestAnimationFrame(animate);
+      setBars((prev) =>
+        prev.map(() => Math.max(3, Math.random() * 25))
+      );
+      raf = requestAnimationFrame(animate);
     };
 
-    if (playing) animRef.current = requestAnimationFrame(animate);
+    if (playing) raf = requestAnimationFrame(animate);
 
-    return () => cancelAnimationFrame(animRef.current);
+    return () => cancelAnimationFrame(raf);
   }, [playing]);
 
   // PLAY
   const togglePlay = () => {
     if (!audioRef.current) {
       const audio = new Audio(STREAM_URL);
-      audio.crossOrigin = "anonymous";
       audio.volume = volume;
-
-      const ctx = new AudioContext();
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 128;
-
-      const source = ctx.createMediaElementSource(audio);
-      source.connect(analyser);
-      analyser.connect(ctx.destination);
-
       audioRef.current = audio;
-      analyserRef.current = analyser;
-      dataRef.current = new Uint8Array(analyser.frequencyBinCount);
-      ctxRef.current = ctx;
     }
 
     if (playing) {
-      audioRef.current?.pause();
-      audioRef.current!.src = "";
-      audioRef.current = null;
-      ctxRef.current?.close();
-      ctxRef.current = null;
+      audioRef.current.pause();
       setPlaying(false);
     } else {
-      audioRef.current?.play().then(() => setPlaying(true));
+      audioRef.current.play().catch(() => {});
+      setPlaying(true);
     }
   };
 
@@ -119,134 +92,4 @@ export default function Player() {
         <div className="border border-[#E8E3DB]/10 p-[56px] flex flex-col gap-[48px]">
 
           {/* HEADER */}
-          <div className="flex justify-between text-[11px] tracking-[0.2em] uppercase text-[#E8E3DB]/50">
-            
-            <div className="flex items-center gap-[10px]">
-              <div className="w-[6px] h-[6px] bg-[#9B1A2A]" />
-              <span>AHORA SUENA</span>
-            </div>
-
-            <span>LATENCY: 24MS / 320KBPS</span>
-          </div>
-
-          {/* INFO */}
-          <div className="flex gap-[32px] items-center">
-
-            <div className="w-[110px] h-[110px] bg-black border border-[#E8E3DB]/20 overflow-hidden">
-              {nowPlaying.art && (
-                <img src={nowPlaying.art} className="w-full h-full object-cover grayscale" />
-              )}
-            </div>
-
-            <div className="flex-1 flex justify-between items-center">
-
-              <div>
-                <h1 className="text-[72px] leading-none font-['Newsreader']">
-                  {nowPlaying.artist}
-                </h1>
-                <p className="italic text-[#E8E3DB]/40 mt-[8px] text-[22px]">
-                  {nowPlaying.title}
-                </p>
-              </div>
-
-              {/* ONDAS */}
-              <div className="flex items-end gap-[2px] h-[40px]">
-                {bars.map((h, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      width: 2,
-                      height: `${h}px`,
-                      background: i % 5 === 0 ? "#9B1A2A" : "#E8E3DB",
-                      opacity: 0.7,
-                    }}
-                  />
-                ))}
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* CONTROLES */}
-          <div className="flex items-center gap-[24px]">
-
-            {/* PLAY */}
-            <button
-              onClick={togglePlay}
-              className="w-[70px] h-[70px] bg-[#9B1A2A] flex items-center justify-center"
-            >
-              {playing ? (
-                <div className="flex gap-[4px]">
-                  <div className="w-[4px] h-[18px] bg-white" />
-                  <div className="w-[4px] h-[18px] bg-white" />
-                </div>
-              ) : (
-                <div className="w-0 h-0 border-l-[14px] border-l-white border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent ml-[4px]" />
-              )}
-            </button>
-
-            {/* BARRA + TIEMPOS */}
-            <div className="flex-1 flex flex-col gap-[10px]">
-
-              <div className="h-[1.5px] bg-[#E8E3DB]/20 relative">
-                <div className="absolute left-0 top-0 h-full bg-[#9B1A2A]" style={{ width: "40%" }} />
-              </div>
-
-              {/* TIEMPOS */}
-              <div className="flex justify-between text-[11px] text-[#E8E3DB]/40">
-                <span>02:45</span>
-                <span>05:12</span>
-              </div>
-
-              {/* CONTROLES DERECHA */}
-              <div className="flex justify-end mt-[12px] pr-[40px]">
-                <div className="flex items-center gap-[18px]">
-
-                  {/* MUTE */}
-                  <button onClick={toggleMute} className="opacity-70 hover:opacity-100">
-                    {muted ? (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8E3DB" strokeWidth="1.5">
-                        <polygon points="5 9 9 9 13 5 13 19 9 15 5 15" />
-                        <line x1="16" y1="8" x2="22" y2="16" />
-                        <line x1="22" y1="8" x2="16" y2="16" />
-                      </svg>
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8E3DB" strokeWidth="1.5">
-                        <polygon points="5 9 9 9 13 5 13 19 9 15 5 15" />
-                        <path d="M16 9c1.5 1.5 1.5 4.5 0 6" />
-                      </svg>
-                    )}
-                  </button>
-
-                  {/* VOLUME */}
-                  <div className="flex items-end gap-[2px]">
-                    {[0.2, 0.4, 0.6, 0.8, 1].map((v, i) => (
-                      <div
-                        key={i}
-                        onClick={() => changeVolume(v)}
-                        className={`w-[2px] cursor-pointer ${
-                          volume >= v ? "bg-[#E8E3DB]" : "bg-[#E8E3DB]/20"
-                        }`}
-                        style={{ height: `${8 + i * 5}px` }}
-                      />
-                    ))}
-                  </div>
-
-                </div>
-              </div>
-
-            </div>
-
-          </div>
-
-          <div className="text-[10px] tracking-[0.2em] uppercase text-[#E8E3DB]/40">
-            EMISIÓN CONTINUA · 24/7
-          </div>
-
-        </div>
-
-      </div>
-    </section>
-  );
-}
+          <div className="flex justify-between text-[11
