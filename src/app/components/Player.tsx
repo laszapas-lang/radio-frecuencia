@@ -23,7 +23,7 @@ export default function Player() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const animRef = useRef<number>(0);
 
-  // 🎧 FETCH NOW PLAYING
+  // 📡 NOW PLAYING
   useEffect(() => {
     let mounted = true;
 
@@ -53,7 +53,7 @@ export default function Player() {
     };
   }, []);
 
-  // 🎚️ VISUALIZER (fake por ahora)
+  // 🎚️ VISUALIZER (estable)
   useEffect(() => {
     const animate = () => {
       setBars((prev) =>
@@ -62,7 +62,7 @@ export default function Player() {
       animRef.current = requestAnimationFrame(animate);
     };
 
-    if (playing) {
+    if (audioRef.current && !audioRef.current.paused) {
       animRef.current = requestAnimationFrame(animate);
     } else {
       cancelAnimationFrame(animRef.current);
@@ -70,9 +70,9 @@ export default function Player() {
     }
 
     return () => cancelAnimationFrame(animRef.current);
-  }, [playing]);
+  }, [playing, loading]);
 
-  // 🎧 EVENTOS DE AUDIO (estado real)
+  // 🎧 EVENTOS AUDIO
   useEffect(() => {
     if (!audioRef.current) return;
 
@@ -86,7 +86,7 @@ export default function Player() {
     const onPause = () => setPlaying(false);
     const onEnded = () => setPlaying(false);
     const onError = () => {
-      console.error("Error en el stream");
+      console.error("Stream error");
       setPlaying(false);
       setLoading(false);
     };
@@ -161,7 +161,7 @@ export default function Player() {
 
           {/* TRACK */}
           <div className="flex flex-col gap-[10px]">
-            <p className="font-['Newsreader'] text-[64px] md:text-[84px] leading-[1.02] text-[#E8E3DB]">
+            <p className="font-['Newsreader'] text-[64px] md:text-[84px] text-[#E8E3DB]">
               {nowPlaying.artist}
             </p>
 
