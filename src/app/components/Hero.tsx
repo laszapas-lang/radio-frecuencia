@@ -18,7 +18,7 @@ export default function Hero() {
 
           {/* Subtitle */}
           <p className="font-['Space_Grotesk',sans-serif] text-[18px] leading-[1.6] text-[#E8E3DB] max-w-[600px]">
-            Música en español sin interrupciones. Curaduría independiente desde el margen.
+            Música en español sin interrupciones.
           </p>
 
           {/* CTA */}
