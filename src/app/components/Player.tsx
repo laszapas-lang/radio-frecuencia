@@ -115,7 +115,7 @@ export default function Player() {
               <div className="w-[6px] h-[6px] bg-[#9B1A2A]" />
               AHORA SUENA
             </div>
-            <div>LATENCY: 24MS / 320KBPS</div>
+            <div>LATENCIA: 24MS / 320KBPS</div>
           </div>
 
           {/* TRACK INFO */}
