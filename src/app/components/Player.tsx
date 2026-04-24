@@ -7,7 +7,7 @@ export default function Player() {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [volume, setVolume] = useState(0.8);
-  const [bars, setBars] = useState<number[]>(Array(80).fill(2));
+  const [bars, setBars] = useState<number[]>(Array(40).fill(4));
 
   const [nowPlaying, setNowPlaying] = useState({
     artist: "Radio Frecuencia",
@@ -22,7 +22,7 @@ export default function Player() {
   const ctxRef = useRef<AudioContext | null>(null);
   const animRef = useRef<number>(0);
 
-  // 📡 FETCH
+  // 📡 FETCH NOW PLAYING
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -43,18 +43,18 @@ export default function Player() {
     return () => clearInterval(i);
   }, []);
 
-  // 🎧 VISUALIZER EN LÍNEA
+  // 🎧 VISUALIZER (ondas arriba, discretas)
   useEffect(() => {
     const animate = () => {
       if (!analyserRef.current || !dataRef.current) return;
 
       analyserRef.current.getByteFrequencyData(dataRef.current);
       const values = Array.from(dataRef.current);
-      const step = Math.floor(values.length / 80);
+      const step = Math.floor(values.length / 40);
 
-      const newBars = Array(80).fill(0).map((_, i) => {
+      const newBars = Array(40).fill(0).map((_, i) => {
         const v = values[i * step];
-        return Math.max(2, (v / 255) * 20);
+        return Math.max(4, (v / 255) * 30);
       });
 
       setBars(newBars);
@@ -66,7 +66,7 @@ export default function Player() {
     return () => cancelAnimationFrame(animRef.current);
   }, [playing]);
 
-  // ▶️ PLAY
+  // ▶️ PLAY / PAUSE
   const togglePlay = () => {
     if (!audioRef.current) {
       const audio = new Audio(STREAM_URL);
@@ -96,6 +96,7 @@ export default function Player() {
       setPlaying(false);
     } else {
       setLoading(true);
+
       audioRef.current.play()
         .then(() => {
           setPlaying(true);
@@ -118,29 +119,51 @@ export default function Player() {
             <span>{nowPlaying.listeners} OYENTES</span>
           </div>
 
-          {/* INFO */}
+          {/* INFO + ONDAS */}
           <div className="flex gap-[32px] items-center">
 
             {/* COVER */}
             <div className="w-[110px] h-[110px] bg-black border border-[#E8E3DB]/20 overflow-hidden">
               {nowPlaying.art && (
-                <img src={nowPlaying.art} className="w-full h-full object-cover grayscale" />
+                <img
+                  src={nowPlaying.art}
+                  className="w-full h-full object-cover grayscale"
+                />
               )}
             </div>
 
-            {/* TEXT */}
-            <div>
-              <h1 className="text-[56px] text-[#E8E3DB] font-['Newsreader'] leading-none">
-                {nowPlaying.artist}
-              </h1>
-              <p className="text-[#E8E3DB]/40 italic mt-[8px]">
-                {nowPlaying.title}
-              </p>
+            {/* TEXTO + ONDAS */}
+            <div className="flex-1 flex justify-between items-center">
+
+              <div>
+                <h1 className="text-[56px] text-[#E8E3DB] font-['Newsreader'] leading-none">
+                  {nowPlaying.artist}
+                </h1>
+                <p className="text-[#E8E3DB]/40 italic mt-[8px]">
+                  {nowPlaying.title}
+                </p>
+              </div>
+
+              {/* ONDAS */}
+              <div className="flex items-end gap-[2px] h-[40px] ml-[40px]">
+                {bars.map((h, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      width: 2,
+                      height: `${h}px`,
+                      background: i % 6 === 0 ? "#9B1A2A" : "#E8E3DB",
+                      opacity: 0.7,
+                    }}
+                  />
+                ))}
+              </div>
+
             </div>
 
           </div>
 
-          {/* CONTROLES + LÍNEA */}
+          {/* CONTROLES */}
           <div className="flex items-center gap-[24px]">
 
             {/* PLAY */}
@@ -151,25 +174,12 @@ export default function Player() {
               {playing ? "II" : "▶"}
             </button>
 
-            {/* LÍNEA + VISUALIZER */}
-            <div className="flex-1 h-[20px] relative flex items-end gap-[1px]">
-
-              {/* BASE */}
-              <div className="absolute inset-0 h-[1px] bg-[#E8E3DB]/20 top-[50%]" />
-
-              {/* BARRAS */}
-              {bars.map((h, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: 2,
-                    height: `${h}px`,
-                    background: i % 10 === 0 ? "#9B1A2A" : "#E8E3DB",
-                    opacity: 0.8,
-                  }}
-                />
-              ))}
-
+            {/* LÍNEA PROGRESO */}
+            <div className="flex-1 h-[2px] bg-[#E8E3DB]/20 relative">
+              <div
+                className="absolute left-0 top-0 h-full bg-[#9B1A2A]"
+                style={{ width: "40%" }}
+              />
             </div>
 
           </div>
