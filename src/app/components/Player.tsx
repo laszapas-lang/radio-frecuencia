@@ -6,6 +6,7 @@ const STATION_API = "https://radioweb-u71993.vm.elestio.app/api/nowplaying/1";
 export default function Player() {
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.8);
+  const [muted, setMuted] = useState(false);
   const [bars, setBars] = useState<number[]>(Array(40).fill(4));
 
   const [nowPlaying, setNowPlaying] = useState({
@@ -96,6 +97,23 @@ export default function Player() {
     }
   };
 
+  // 🔇 MUTE
+  const toggleMute = () => {
+    if (!audioRef.current) return;
+    audioRef.current.muted = !muted;
+    setMuted(!muted);
+  };
+
+  // 🔊 VOLUME
+  const changeVolume = (v: number) => {
+    setVolume(v);
+    if (audioRef.current) {
+      audioRef.current.volume = v;
+      audioRef.current.muted = false;
+      setMuted(false);
+    }
+  };
+
   return (
     <section className="bg-[#292524] py-[120px] text-[#E8E3DB]">
       <div className="max-w-[1100px] mx-auto px-[40px]">
@@ -105,7 +123,7 @@ export default function Player() {
           {/* HEADER */}
           <div className="flex justify-between text-[11px] tracking-[0.2em] uppercase text-[#E8E3DB]/50">
             <span>AHORA SUENA</span>
-            <span>LATENCIA: 24MS / 320KBPS</span>
+            <span>LATENCY: 24MS / 320KBPS</span>
           </div>
 
           {/* INFO */}
@@ -178,10 +196,37 @@ export default function Player() {
               />
             </div>
 
-            {/* ICONOS VOLUMEN */}
-            <div className="flex items-center gap-[10px] opacity-60 text-sm">
-              <span>🔇</span>
-              <span>🔊</span>
+            {/* AUDIO CONTROLS */}
+            <div className="flex items-center gap-[16px] ml-auto">
+
+              {/* MUTE */}
+              <button
+                onClick={toggleMute}
+                className="opacity-60 hover:opacity-100 transition"
+              >
+                {muted ? (
+                  <div className="w-[14px] h-[14px] border border-[#E8E3DB]" />
+                ) : (
+                  <div className="w-[14px] h-[14px] border border-[#E8E3DB] relative">
+                    <div className="absolute right-[-4px] top-[3px] w-[4px] h-[4px] bg-[#E8E3DB]" />
+                  </div>
+                )}
+              </button>
+
+              {/* VOLUME BARS */}
+              <div className="flex items-end gap-[2px]">
+                {[0.2, 0.4, 0.6, 0.8, 1].map((v, i) => (
+                  <div
+                    key={i}
+                    onClick={() => changeVolume(v)}
+                    className={`w-[3px] cursor-pointer ${
+                      volume >= v ? "bg-[#E8E3DB]" : "bg-[#E8E3DB]/20"
+                    }`}
+                    style={{ height: `${6 + i * 4}px` }}
+                  />
+                ))}
+              </div>
+
             </div>
 
           </div>
