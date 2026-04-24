@@ -149,6 +149,7 @@ export default function Player() {
                 </p>
               </div>
 
+              {/* ONDAS */}
               <div className="flex items-end gap-[2px] h-[40px]">
                 {bars.map((h, i) => (
                   <div
@@ -167,7 +168,7 @@ export default function Player() {
 
           </div>
 
-          {/* CONTROLES PRINCIPALES */}
+          {/* CONTROLES */}
           <div className="flex items-center gap-[24px]">
 
             {/* PLAY */}
@@ -185,23 +186,37 @@ export default function Player() {
               )}
             </button>
 
-            {/* BARRA */}
-            <div className="flex-1 flex flex-col gap-[8px]">
+            {/* BARRA + TIEMPOS */}
+            <div className="flex-1 flex flex-col gap-[10px]">
 
-              <div className="h-[2px] bg-[#E8E3DB]/20 relative">
+              <div className="h-[1.5px] bg-[#E8E3DB]/20 relative">
                 <div className="absolute left-0 top-0 h-full bg-[#9B1A2A]" style={{ width: "40%" }} />
               </div>
 
-              {/* TIEMPOS + AUDIO */}
-              <div className="flex justify-between items-center text-[11px] text-[#E8E3DB]/40">
-
+              {/* TIEMPOS */}
+              <div className="flex justify-between text-[11px] text-[#E8E3DB]/40">
                 <span>02:45</span>
+                <span>05:12</span>
+              </div>
 
-                <div className="flex items-center gap-[16px]">
+              {/* CONTROLES DERECHA */}
+              <div className="flex justify-end mt-[12px] pr-[40px]">
+                <div className="flex items-center gap-[18px]">
 
                   {/* MUTE */}
-                  <button onClick={toggleMute} className="opacity-60 hover:opacity-100">
-                    <div className="w-[12px] h-[12px] border border-[#E8E3DB]" />
+                  <button onClick={toggleMute} className="opacity-70 hover:opacity-100">
+                    {muted ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8E3DB" strokeWidth="1.5">
+                        <polygon points="5 9 9 9 13 5 13 19 9 15 5 15" />
+                        <line x1="16" y1="8" x2="22" y2="16" />
+                        <line x1="22" y1="8" x2="16" y2="16" />
+                      </svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8E3DB" strokeWidth="1.5">
+                        <polygon points="5 9 9 9 13 5 13 19 9 15 5 15" />
+                        <path d="M16 9c1.5 1.5 1.5 4.5 0 6" />
+                      </svg>
+                    )}
                   </button>
 
                   {/* VOLUME */}
@@ -210,18 +225,15 @@ export default function Player() {
                       <div
                         key={i}
                         onClick={() => changeVolume(v)}
-                        className={`w-[3px] cursor-pointer ${
+                        className={`w-[2px] cursor-pointer ${
                           volume >= v ? "bg-[#E8E3DB]" : "bg-[#E8E3DB]/20"
                         }`}
-                        style={{ height: `${6 + i * 4}px` }}
+                        style={{ height: `${8 + i * 5}px` }}
                       />
                     ))}
                   </div>
 
                 </div>
-
-                <span>05:12</span>
-
               </div>
 
             </div>
