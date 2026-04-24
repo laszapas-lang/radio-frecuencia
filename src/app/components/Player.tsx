@@ -97,7 +97,7 @@ export default function Player() {
   };
 
   return (
-    <section className="bg-[#0f0d0c] py-[120px] text-[#E8E3DB]">
+    <<section className="bg-[#292524] py-[120px] text-[#E8E3DB]">
       <div className="max-w-[1100px] mx-auto px-[40px]">
 
         <div className="border border-[#E8E3DB]/10 p-[56px] flex flex-col gap-[48px]">
@@ -105,7 +105,7 @@ export default function Player() {
           {/* HEADER */}
           <div className="flex justify-between text-[11px] tracking-[0.2em] uppercase text-[#E8E3DB]/50">
             <span>AHORA SUENA</span>
-            <span>LATENCY: 24MS / 320KBPS</span>
+            <span>LATENCIA: 24MS / 320KBPS</span>
           </div>
 
           {/* INFO */}
