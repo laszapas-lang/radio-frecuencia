@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
-const STREAM_URL = "";
-const STATION_API = "";
+const STREAM_URL = "https://radioweb-u71993.vm.elestio.app/listen/frecuencia/radio.mp3";
+const STATION_API = "https://radioweb-u71993.vm.elestio.app/api/nowplaying/1";
 
 interface NowPlaying {
   artist: string;
