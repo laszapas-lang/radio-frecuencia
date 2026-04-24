@@ -6,7 +6,7 @@ import {
   Marker,
 } from "react-simple-maps";
 
-const STATION_API = "https://TU_AZURACAST.elest.io/api/nowplaying/1";
+const STATION_API = ""; // 👇 Igual que en Player.tsx — ej: "https://TU_SUBDOMINIO.elest.io/api/nowplaying/1"
 
 const geoUrl =
   "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
@@ -38,7 +38,7 @@ export default function Identity() {
   ];
 
   return (
-    <div className="bg-[#292524] py-[120px]">
+    <div id="identity" className="bg-[#292524] py-[120px]">
       <div className="max-w-[1280px] mx-auto px-[64px]">
         <div className="max-w-[900px] flex flex-col gap-[48px]">
           
@@ -50,7 +50,7 @@ export default function Identity() {
           <div className="w-[120px] h-[2px] bg-[#9B1A2A]" />
 
           {/* BLOQUE MAPA */}
-          <div className="flex flex-col gap-[20px] max-w-[480px]">
+          <div className="flex flex-col gap-[20px] w-full max-w-[480px]">
 
             {/* HEADER */}
             <div className="flex justify-between items-center">
@@ -64,7 +64,7 @@ export default function Identity() {
             </div>
 
             {/* MAPA (PROPORCIÓN CORRECTA) */}
-            <div className="w-[480px] aspect-[2/1] bg-[#1a1714] overflow-hidden">
+            <div className="w-full aspect-[2/1] bg-[#1a1714] overflow-hidden">
 
               <ComposableMap
                 projection="geoMercator"
