@@ -3,6 +3,13 @@ import { useState, useEffect, useRef } from "react";
 const STREAM_URL = "https://radioweb-u71993.vm.elestio.app/listen/frecuencia/radio.mp3";
 const STATION_API = "https://radioweb-u71993.vm.elestio.app/api/nowplaying/1";
 
+function formatTime(seconds: number): string {
+  if (!seconds || seconds < 0) return "00:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
 export default function Player() {
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -12,29 +19,59 @@ export default function Player() {
     artist: "Radio Frecuencia",
     title: "Emisión en directo",
     artwork: "",
+    duration: 0,
   });
 
-  const [progress, setProgress] = useState(30);
-  const [currentTime, setCurrentTime] = useState("02:45");
-  const [duration, setDuration] = useState("05:12");
-
+  const [elapsed, setElapsed] = useState(0);
+  const elapsedRef = useRef(0);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Calcula progreso y tiempo restante
+  const duration = track.duration || 1;
+  const progress = Math.min((elapsed / duration) * 100, 100);
+  const remaining = Math.max(duration - elapsed, 0);
+
+  // FETCH — sincroniza elapsed con el servidor cada 15s
   useEffect(() => {
     const fetchNowPlaying = async () => {
       try {
         const res = await fetch(STATION_API);
         const data = await res.json();
+
+        const serverElapsed = data.now_playing?.elapsed || 0;
+        const serverDuration = data.now_playing?.duration || 0;
+
         setTrack({
           artist: data.now_playing?.song?.artist || "Radio Frecuencia",
           title: data.now_playing?.song?.title || "Emisión en directo",
           artwork: data.now_playing?.song?.art || "",
+          duration: serverDuration,
         });
+
+        // Sincroniza el contador local con el servidor
+        elapsedRef.current = serverElapsed;
+        setElapsed(serverElapsed);
       } catch {}
     };
+
     fetchNowPlaying();
     const interval = setInterval(fetchNowPlaying, 15000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Tick local — avanza 1 segundo entre fetches para que sea fluido
+  useEffect(() => {
+    if (tickRef.current) clearInterval(tickRef.current);
+
+    tickRef.current = setInterval(() => {
+      elapsedRef.current += 1;
+      setElapsed(elapsedRef.current);
+    }, 1000);
+
+    return () => {
+      if (tickRef.current) clearInterval(tickRef.current);
+    };
   }, []);
 
   const togglePlay = () => {
@@ -112,7 +149,7 @@ export default function Player() {
             </div>
           </div>
 
-          {/* FILA PLAY + PROGRESO — centrados verticalmente */}
+          {/* FILA PLAY + PROGRESO */}
           <div className="flex items-center gap-[20px] mt-[50px]">
 
             {/* PLAY */}
@@ -134,19 +171,19 @@ export default function Player() {
             <div className="flex-1 flex flex-col gap-[10px]">
               <div className="w-full h-[1px] bg-[#E8E3DB]/20 relative">
                 <div
-                  className="absolute top-0 left-0 h-full bg-[#9B1A2A]"
+                  className="absolute top-0 left-0 h-full bg-[#9B1A2A] transition-all duration-1000 linear"
                   style={{ width: `${progress}%` }}
                 />
               </div>
               <div className="flex justify-between text-[11px] text-[#E8E3DB]/40 font-['Space_Grotesk']">
-                <span>{currentTime}</span>
-                <span>{duration}</span>
+                <span>{formatTime(elapsed)}</span>
+                <span>{formatTime(remaining)}</span>
               </div>
             </div>
 
           </div>
 
-          {/* FILA INFERIOR — EMISIÓN CONTINUA a la izq, MUTE+VOLUMEN a la der */}
+          {/* FILA INFERIOR */}
           <div className="flex items-center justify-between mt-[24px]">
 
             <div className="text-[11px] text-[#E8E3DB]/40 uppercase tracking-[0.2em] font-['Space_Grotesk']">
