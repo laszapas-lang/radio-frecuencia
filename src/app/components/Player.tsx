@@ -3,20 +3,12 @@ import { useState, useEffect, useRef } from "react";
 const STREAM_URL = "https://radioweb-u71993.vm.elestio.app/listen/frecuencia/radio.mp3";
 const STATION_API = "https://radioweb-u71993.vm.elestio.app/api/nowplaying/1";
 
-interface NowPlaying {
-  artist: string;
-  title: string;
-  listeners: number;
-  art: string;
-}
-
 export default function Player() {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [volume, setVolume] = useState(0.8);
-  const [bars, setBars] = useState<number[]>(Array(48).fill(6));
-
-  const [nowPlaying, setNowPlaying] = useState<NowPlaying>({
+  const [bars, setBars] = useState<number[]>(Array(64).fill(6));
+  const [nowPlaying, setNowPlaying] = useState({
     artist: "Radio Frecuencia",
     title: "Emisión en directo",
     listeners: 0,
@@ -24,21 +16,21 @@ export default function Player() {
   });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const dataRef = useRef<Uint8Array | null>(null);
+  const ctxRef = useRef<AudioContext | null>(null);
   const animRef = useRef<number>(0);
 
-  // 📡 NOW PLAYING
+  // 📡 FETCH
   useEffect(() => {
-    const fetchNowPlaying = async () => {
+    const fetchData = async () => {
       try {
         const res = await fetch(STATION_API);
         const data = await res.json();
 
         setNowPlaying({
           artist: data.now_playing?.song?.artist || "Radio Frecuencia",
-          title: data.now_playing?.song?.title || "Emisión en directo",
+          title: data.now_playing?.song?.title || "En directo",
           listeners: data.listeners?.current || 0,
           art: data.now_playing?.song?.art || "",
         });
@@ -47,24 +39,24 @@ export default function Player() {
       }
     };
 
-    fetchNowPlaying();
-    const interval = setInterval(fetchNowPlaying, 10000);
-    return () => clearInterval(interval);
+    fetchData();
+    const i = setInterval(fetchData, 10000);
+    return () => clearInterval(i);
   }, []);
 
-  // 🎚️ VISUALIZER REAL
+  // 🎧 VISUALIZER REAL
   useEffect(() => {
     const animate = () => {
-      if (!analyserRef.current || !dataArrayRef.current) return;
+      if (!analyserRef.current || !dataRef.current) return;
 
-      analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+      analyserRef.current.getByteFrequencyData(dataRef.current);
 
-      const values = Array.from(dataArrayRef.current);
-      const step = Math.floor(values.length / 48);
+      const values = Array.from(dataRef.current);
+      const step = Math.floor(values.length / 64);
 
-      const newBars = Array(48).fill(0).map((_, i) => {
-        const val = values[i * step];
-        return Math.max(4, (val / 255) * 60);
+      const newBars = Array(64).fill(0).map((_, i) => {
+        const v = values[i * step];
+        return Math.max(4, (v / 255) * 80);
       });
 
       setBars(newBars);
@@ -73,8 +65,6 @@ export default function Player() {
 
     if (playing) {
       animRef.current = requestAnimationFrame(animate);
-    } else {
-      cancelAnimationFrame(animRef.current);
     }
 
     return () => cancelAnimationFrame(animRef.current);
@@ -95,101 +85,85 @@ export default function Player() {
       source.connect(analyser);
       analyser.connect(ctx.destination);
 
-      const bufferLength = analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
+      const data = new Uint8Array(analyser.frequencyBinCount);
 
       audioRef.current = audio;
-      audioContextRef.current = ctx;
       analyserRef.current = analyser;
-      dataArrayRef.current = dataArray;
+      dataRef.current = data;
+      ctxRef.current = ctx;
     }
 
     if (playing) {
       audioRef.current.pause();
       audioRef.current.src = "";
       audioRef.current = null;
-
-      audioContextRef.current?.close();
-      audioContextRef.current = null;
-
+      ctxRef.current?.close();
+      ctxRef.current = null;
       setPlaying(false);
     } else {
       setLoading(true);
-
       audioRef.current.play()
         .then(() => {
           setPlaying(true);
           setLoading(false);
         })
-        .catch(() => {
-          setPlaying(false);
-          setLoading(false);
-        });
+        .catch(() => setLoading(false));
     }
   };
 
-  const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = parseFloat(e.target.value);
-    setVolume(v);
-    if (audioRef.current) audioRef.current.volume = v;
-  };
-
   return (
-    <section className="bg-[#1a1714] border-t border-[#E8E3DB]/10">
-      <div className="max-w-[900px] mx-auto px-[32px] py-[100px] flex flex-col gap-[60px]">
+    <section className="bg-[#14110f] text-[#E8E3DB] py-[120px]">
+      <div className="max-w-[1100px] mx-auto px-[40px] flex flex-col gap-[60px]">
 
         {/* HEADER */}
-        <div className="flex justify-between text-[11px] uppercase tracking-[0.2em] text-[#E8E3DB]/50">
+        <div className="flex justify-between text-[11px] uppercase tracking-[0.2em] opacity-60">
           <span>{loading ? "CARGANDO" : playing ? "EN ANTENA" : "OFFLINE"}</span>
           <span>{nowPlaying.listeners} OYENTES</span>
         </div>
 
-        {/* CONTENIDO */}
-        <div className="flex gap-[32px] items-center">
+        {/* MAIN */}
+        <div className="flex gap-[60px] items-center">
 
-          {/* PORTADA */}
-          <div className="w-[90px] h-[90px] bg-black border border-[#E8E3DB]/20 overflow-hidden">
+          {/* COVER GRANDE */}
+          <div className="w-[160px] h-[160px] bg-black border border-[#E8E3DB]/20">
             {nowPlaying.art && (
-              <img
-                src={nowPlaying.art}
-                className="w-full h-full object-cover grayscale contrast-125"
-              />
+              <img src={nowPlaying.art} className="w-full h-full object-cover grayscale contrast-125" />
             )}
           </div>
 
-          {/* TEXTO */}
-          <div className="flex flex-col">
-            <p className="text-[42px] text-[#E8E3DB] font-['Newsreader']">
+          {/* INFO */}
+          <div className="flex flex-col gap-[10px]">
+            <h1 className="text-[64px] leading-none font-['Newsreader']">
               {nowPlaying.artist}
-            </p>
-            <p className="text-[#E8E3DB]/40 italic">
+            </h1>
+            <p className="italic opacity-40 text-[20px]">
               {nowPlaying.title}
             </p>
           </div>
 
         </div>
 
-        {/* VISUALIZER */}
-        <div className="flex items-end gap-[2px] h-[60px] border-t border-[#E8E3DB]/10 pt-[12px]">
+        {/* VISUALIZER GRANDE */}
+        <div className="flex items-end gap-[2px] h-[100px] border-t border-[#E8E3DB]/10 pt-[20px]">
           {bars.map((h, i) => (
             <div
               key={i}
               style={{
                 width: 2,
                 height: `${h}px`,
-                background: i % 3 === 0 ? "#9B1A2A" : "#E8E3DB",
-                opacity: 0.7,
+                background: i % 5 === 0 ? "#9B1A2A" : "#E8E3DB",
+                opacity: 0.8,
               }}
             />
           ))}
         </div>
 
-        {/* CONTROLES */}
+        {/* CONTROLES GRANDES */}
         <div className="flex items-center justify-between">
 
           <button
             onClick={togglePlay}
-            className="w-[60px] h-[60px] border border-[#9B1A2A] flex items-center justify-center"
+            className="w-[80px] h-[80px] border border-[#9B1A2A] flex items-center justify-center text-[24px]"
           >
             {playing ? "II" : "▶"}
           </button>
@@ -200,8 +174,8 @@ export default function Player() {
             max="1"
             step="0.01"
             value={volume}
-            onChange={handleVolume}
-            className="w-[120px]"
+            onChange={(e) => setVolume(parseFloat(e.target.value))}
+            className="w-[200px]"
           />
 
         </div>
