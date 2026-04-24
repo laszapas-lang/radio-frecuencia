@@ -188,9 +188,7 @@ export default function Player() {
           <div className="flex justify-between items-center mt-[40px]">
 
             <div className="flex gap-[24px] items-center">
-              {track.artwork && (
-                <img src={track.artwork} alt="" className="w-[90px] h-[90px] object-cover" />
-              )}
+
               <div>
                 <h1 className="font-['Newsreader'] italic text-[48px] md:text-[64px] leading-none text-[#E8E3DB]">
                   {track.artist}
