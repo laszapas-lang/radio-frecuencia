@@ -59,21 +59,27 @@ export default function Player() {
         const serverDuration: number = data.now_playing?.duration || 0;
 
         if (playedAt !== playedAtRef.current) {
-          // Canción nueva: actualizamos todo
+          // Canción nueva detectada en el servidor.
+          // Solo actualizamos la UI si el usuario está reproduciendo en este momento.
+          // Si está en pause, guardamos los datos pendientes y los aplicamos cuando retome.
           playedAtRef.current = playedAt;
           durationRef.current = serverDuration;
-          setTrack({
-            artist: data.now_playing?.song?.artist || "Radio Frecuencia",
-            title: data.now_playing?.song?.title || "Emisión en directo",
-            artwork: data.now_playing?.song?.art || "",
-            duration: serverDuration,
-          });
-          // El elapsed lo calculamos nosotros a partir de played_at para máxima precisión
-          const nowElapsed = playedAt > 0
-            ? Math.max(0, Math.floor(Date.now() / 1000) - playedAt)
-            : (data.now_playing?.elapsed || 0);
-          elapsedRef.current = nowElapsed;
-          setElapsed(nowElapsed);
+
+          if (playingRef.current) {
+            setTrack({
+              artist: data.now_playing?.song?.artist || "Radio Frecuencia",
+              title: data.now_playing?.song?.title || "Emisión en directo",
+              artwork: data.now_playing?.song?.art || "",
+              duration: serverDuration,
+            });
+            const nowElapsed = playedAt > 0
+              ? Math.max(0, Math.floor(Date.now() / 1000) - playedAt)
+              : (data.now_playing?.elapsed || 0);
+            elapsedRef.current = nowElapsed;
+            setElapsed(nowElapsed);
+          }
+          // Si está pausado: playedAtRef ya tiene el nuevo valor, pero la UI no cambia.
+          // Cuando el usuario pulse play, togglePlay leerá playedAtRef y sincronizará.
         }
         // Si es la misma canción NO tocamos elapsed — el tick local es más suave que el servidor
       } catch {}
@@ -215,10 +221,37 @@ export default function Player() {
 
     if (playing) {
       audioRef.current.pause();
+      setPlaying(false);
     } else {
+      // Reconectar al punto actual del stream en vivo (no donde se pausó)
+      audioRef.current.src = STREAM_URL;
+      audioRef.current.load();
       audioRef.current.play().catch(() => {});
+
+      // Sincronizar UI inmediatamente con lo que emite el servidor ahora
+      fetch(STATION_API)
+        .then(r => r.json())
+        .then(data => {
+          const playedAt: number = data.now_playing?.played_at || 0;
+          const serverDuration: number = data.now_playing?.duration || 0;
+          playedAtRef.current = playedAt;
+          durationRef.current = serverDuration;
+          setTrack({
+            artist: data.now_playing?.song?.artist || "Radio Frecuencia",
+            title: data.now_playing?.song?.title || "Emisión en directo",
+            artwork: data.now_playing?.song?.art || "",
+            duration: serverDuration,
+          });
+          const nowElapsed = playedAt > 0
+            ? Math.max(0, Math.floor(Date.now() / 1000) - playedAt)
+            : (data.now_playing?.elapsed || 0);
+          elapsedRef.current = nowElapsed;
+          setElapsed(nowElapsed);
+        })
+        .catch(() => {});
+
+      setPlaying(true);
     }
-    setPlaying(!playing);
   };
 
   const toggleMute = () => {
