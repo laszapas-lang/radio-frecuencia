@@ -126,8 +126,9 @@ export default function Player() {
         const b0 = Math.min(Math.floor(t * BANDS * 0.5), BANDS - 1);
         const b1 = Math.min(Math.floor(t * BANDS * 0.25), BANDS - 1);
         const b2 = Math.min(Math.floor(t * BANDS * 0.8), BANDS - 1);
-        const amp = smoothed[b0] * 0.5 + smoothed[b1] * 0.35 + smoothed[b2] * 0.15;
-        const y = H / 2 + amp * (H / 2 - 2) * Math.sin(t * Math.PI * 5);
+        const amp = (smoothed[b0] * 0.5 + smoothed[b1] * 0.35 + smoothed[b2] * 0.15) * 2.2;
+        const clampedAmp = Math.min(amp, 1);
+        const y = H / 2 + clampedAmp * (H / 2 - 2) * Math.sin(t * Math.PI * 5);
         x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       }
       ctx.strokeStyle = CREAM;
@@ -139,7 +140,7 @@ export default function Player() {
       for (let x = 0; x < W; x++) {
         const t = x / W;
         const b = Math.min(Math.floor(t * 12), 11);
-        const amp = smoothed[b] * 0.55;
+        const amp = Math.min(smoothed[b] * 2.0, 1);
         const y = H / 2 + amp * (H / 2 - 2) * Math.sin(t * Math.PI * 3 + Math.PI * 0.6);
         x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       }
@@ -169,8 +170,10 @@ export default function Player() {
       audioCtxRef.current = audioCtx;
 
       const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 256;              // 128 bins de frecuencia
-      analyser.smoothingTimeConstant = 0.75;
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.5;
+      analyser.minDecibels = -85;
+      analyser.maxDecibels = -10;
       analyserRef.current = analyser;
 
       const source = audioCtx.createMediaElementSource(audioRef.current);
