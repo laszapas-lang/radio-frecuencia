@@ -25,8 +25,10 @@ export default function Player() {
   const [elapsed, setElapsed] = useState(0);
   const elapsedRef = useRef(0);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Guardamos el song_id actual para detectar cambio de canción
-  const currentSongIdRef = useRef<string | number>("");
+  // Identificador estable de la canción actual: usamos played_at (timestamp de inicio)
+  const playedAtRef = useRef<number>(0);
+  // Duración conocida de la canción actual
+  const durationRef = useRef<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animRef = useRef<number>(0);
@@ -37,7 +39,8 @@ export default function Player() {
   const analyserRef = useRef<AnalyserNode | null>(null);
 
   const duration = track.duration || 1;
-  const progress = Math.min((elapsed / duration) * 100, 100);
+  // Clamp progress: nunca puede superar 100% aunque el tick local se adelante
+  const progress = Math.min((elapsed / Math.max(duration, 1)) * 100, 100);
 
   // Mantener playingRef sincronizado
   useEffect(() => {
@@ -50,35 +53,33 @@ export default function Player() {
       try {
         const res = await fetch(STATION_API);
         const data = await res.json();
-        const songId = data.now_playing?.song?.id ?? data.now_playing?.played_at ?? "";
-        const serverElapsed = data.now_playing?.elapsed || 0;
-        const serverDuration = data.now_playing?.duration || 0;
 
-        if (songId !== currentSongIdRef.current) {
-          // Canción nueva confirmada por el servidor: actualizamos títulos y reseteamos progreso
-          currentSongIdRef.current = songId;
+        // played_at es el timestamp unix de cuando empezó la canción — es el identificador más fiable
+        const playedAt: number = data.now_playing?.played_at || 0;
+        const serverDuration: number = data.now_playing?.duration || 0;
+
+        if (playedAt !== playedAtRef.current) {
+          // Canción nueva: actualizamos todo
+          playedAtRef.current = playedAt;
+          durationRef.current = serverDuration;
           setTrack({
             artist: data.now_playing?.song?.artist || "Radio Frecuencia",
             title: data.now_playing?.song?.title || "Emisión en directo",
             artwork: data.now_playing?.song?.art || "",
             duration: serverDuration,
           });
-          // Resincronizar elapsed con el servidor
-          elapsedRef.current = serverElapsed;
-          setElapsed(serverElapsed);
-        } else {
-          // Misma canción: solo corregimos la deriva del tick local con el tiempo del servidor
-          // Si el tick local se ha desviado más de 3s, resincronizamos silenciosamente
-          const drift = Math.abs(elapsedRef.current - serverElapsed);
-          if (drift > 3) {
-            elapsedRef.current = serverElapsed;
-            setElapsed(serverElapsed);
-          }
+          // El elapsed lo calculamos nosotros a partir de played_at para máxima precisión
+          const nowElapsed = playedAt > 0
+            ? Math.max(0, Math.floor(Date.now() / 1000) - playedAt)
+            : (data.now_playing?.elapsed || 0);
+          elapsedRef.current = nowElapsed;
+          setElapsed(nowElapsed);
         }
+        // Si es la misma canción NO tocamos elapsed — el tick local es más suave que el servidor
       } catch {}
     };
     fetchNowPlaying();
-    const interval = setInterval(() => fetchNowPlaying(), 5000);
+    const interval = setInterval(() => fetchNowPlaying(), 8000);
     return () => clearInterval(interval);
   }, []);
 
