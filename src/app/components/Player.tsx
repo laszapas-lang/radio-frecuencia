@@ -87,8 +87,8 @@ export default function Player() {
     const CREAM = "rgba(232,227,219,0.45)";
     const RED = "#9B1A2A";
 
-    const BANDS = 64;
-    const smoothed = new Float32Array(BANDS).fill(0);
+    // Buffer de waveform suavizado
+    let waveSmoothed: Float32Array | null = null;
 
     const draw = () => {
       const W = canvas.width;
@@ -98,55 +98,66 @@ export default function Player() {
       const analyser = analyserRef.current;
 
       if (playingRef.current && analyser) {
-        const freqData = new Uint8Array(analyser.frequencyBinCount);
-        analyser.getByteFrequencyData(freqData);
+        const bufLen = analyser.fftSize;
+        const waveData = new Uint8Array(bufLen);
+        analyser.getByteTimeDomainData(waveData);
 
-        const binCount = freqData.length;
-        for (let b = 0; b < BANDS; b++) {
-          const start = Math.floor((b / BANDS) * binCount);
-          const end = Math.floor(((b + 1) / BANDS) * binCount);
-          let sum = 0;
-          for (let k = start; k < end; k++) sum += freqData[k];
-          const avg = sum / Math.max(end - start, 1) / 255;
-          // Sube rápido, baja lento
-          smoothed[b] = avg > smoothed[b]
-            ? smoothed[b] * 0.2 + avg * 0.8
-            : smoothed[b] * 0.88 + avg * 0.12;
+        if (!waveSmoothed || waveSmoothed.length !== bufLen) {
+          waveSmoothed = new Float32Array(bufLen).fill(128);
+        }
+
+        for (let i = 0; i < bufLen; i++) {
+          // Sube rápido, baja lento para mantener la forma pero reaccionar a picos
+          waveSmoothed[i] = waveData[i] > waveSmoothed[i]
+            ? waveSmoothed[i] * 0.3 + waveData[i] * 0.7
+            : waveSmoothed[i] * 0.6 + waveData[i] * 0.4;
         }
       } else {
-        for (let b = 0; b < BANDS; b++) {
-          smoothed[b] *= 0.93;
+        // Decaimiento suave hacia silencio (128 = centro)
+        if (waveSmoothed) {
+          for (let i = 0; i < waveSmoothed.length; i++) {
+            waveSmoothed[i] = waveSmoothed[i] * 0.88 + 128 * 0.12;
+          }
         }
       }
 
-      // Onda principal (crema) — mezcla de bandas de frecuencia
+      // Ganancia visual: la señal de radio comprimida suele tener amplitud ~0.3–0.5
+      // multiplicamos para que use bien los 48px de alto
+      const GAIN = 4.0;
+      const bufLen = waveSmoothed ? waveSmoothed.length : 0;
+
+      // --- Onda principal (crema): waveform real ---
       ctx.beginPath();
       for (let x = 0; x < W; x++) {
-        const t = x / W;
-        const b0 = Math.min(Math.floor(t * BANDS * 0.5), BANDS - 1);
-        const b1 = Math.min(Math.floor(t * BANDS * 0.25), BANDS - 1);
-        const b2 = Math.min(Math.floor(t * BANDS * 0.8), BANDS - 1);
-        const amp = (smoothed[b0] * 0.5 + smoothed[b1] * 0.35 + smoothed[b2] * 0.15) * 2.2;
-        const clampedAmp = Math.min(amp, 1);
-        const y = H / 2 + clampedAmp * (H / 2 - 2) * Math.sin(t * Math.PI * 5);
+        let y = H / 2;
+        if (waveSmoothed && bufLen > 0) {
+          const idx = Math.floor((x / W) * bufLen);
+          const normalized = ((waveSmoothed[idx] - 128) / 128) * GAIN;
+          const clamped = Math.max(-1, Math.min(1, normalized));
+          y = H / 2 + clamped * (H / 2 - 2);
+        }
         x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       }
       ctx.strokeStyle = CREAM;
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Onda roja secundaria — solo graves (primeras 12 bandas)
+      // --- Onda roja: misma waveform desplazada media longitud (contrapunto orgánico) ---
       ctx.beginPath();
       for (let x = 0; x < W; x++) {
-        const t = x / W;
-        const b = Math.min(Math.floor(t * 12), 11);
-        const amp = Math.min(smoothed[b] * 2.0, 1);
-        const y = H / 2 + amp * (H / 2 - 2) * Math.sin(t * Math.PI * 3 + Math.PI * 0.6);
+        let y = H / 2;
+        if (waveSmoothed && bufLen > 0) {
+          const offset = Math.floor(bufLen / 2);
+          const idx = (Math.floor((x / W) * bufLen) + offset) % bufLen;
+          const normalized = ((waveSmoothed[idx] - 128) / 128) * GAIN * 0.5;
+          const clamped = Math.max(-1, Math.min(1, normalized));
+          y = H / 2 + clamped * (H / 2 - 2);
+        }
         x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       }
       ctx.strokeStyle = RED;
       ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.7;
+      ctx.globalAlpha = 0.65;
       ctx.stroke();
       ctx.globalAlpha = 1;
 
@@ -170,10 +181,8 @@ export default function Player() {
       audioCtxRef.current = audioCtx;
 
       const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 512;
-      analyser.smoothingTimeConstant = 0.5;
-      analyser.minDecibels = -85;
-      analyser.maxDecibels = -10;
+      analyser.fftSize = 2048;  // más muestras = onda más detallada
+      analyser.smoothingTimeConstant = 0.0;  // suavizado propio en el draw
       analyserRef.current = analyser;
 
       const source = audioCtx.createMediaElementSource(audioRef.current);
