@@ -25,6 +25,8 @@ export default function Player() {
   const [elapsed, setElapsed] = useState(0);
   const elapsedRef = useRef(0);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Guardamos el song_id actual para detectar cambio de canción
+  const currentSongIdRef = useRef<string | number>("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animRef = useRef<number>(0);
@@ -48,20 +50,35 @@ export default function Player() {
       try {
         const res = await fetch(STATION_API);
         const data = await res.json();
+        const songId = data.now_playing?.song?.id ?? data.now_playing?.played_at ?? "";
         const serverElapsed = data.now_playing?.elapsed || 0;
         const serverDuration = data.now_playing?.duration || 0;
-        setTrack({
-          artist: data.now_playing?.song?.artist || "Radio Frecuencia",
-          title: data.now_playing?.song?.title || "Emisión en directo",
-          artwork: data.now_playing?.song?.art || "",
-          duration: serverDuration,
-        });
-        elapsedRef.current = serverElapsed;
-        setElapsed(serverElapsed);
+
+        if (songId !== currentSongIdRef.current) {
+          // Canción nueva confirmada por el servidor: actualizamos títulos y reseteamos progreso
+          currentSongIdRef.current = songId;
+          setTrack({
+            artist: data.now_playing?.song?.artist || "Radio Frecuencia",
+            title: data.now_playing?.song?.title || "Emisión en directo",
+            artwork: data.now_playing?.song?.art || "",
+            duration: serverDuration,
+          });
+          // Resincronizar elapsed con el servidor
+          elapsedRef.current = serverElapsed;
+          setElapsed(serverElapsed);
+        } else {
+          // Misma canción: solo corregimos la deriva del tick local con el tiempo del servidor
+          // Si el tick local se ha desviado más de 3s, resincronizamos silenciosamente
+          const drift = Math.abs(elapsedRef.current - serverElapsed);
+          if (drift > 3) {
+            elapsedRef.current = serverElapsed;
+            setElapsed(serverElapsed);
+          }
+        }
       } catch {}
     };
     fetchNowPlaying();
-    const interval = setInterval(() => fetchNowPlaying(), 15000);
+    const interval = setInterval(() => fetchNowPlaying(), 5000);
     return () => clearInterval(interval);
   }, []);
 
