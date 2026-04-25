@@ -181,7 +181,7 @@ export default function Player() {
       audioCtxRef.current = audioCtx;
 
       const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 2048;  // más muestras = onda más detallada
+      analyser.fftSize = 256;   // menos muestras = ciclos de onda más largos y legibles
       analyser.smoothingTimeConstant = 0.0;  // suavizado propio en el draw
       analyserRef.current = analyser;
 
