@@ -41,10 +41,9 @@ export default function Player() {
     playingRef.current = playing;
   }, [playing]);
 
-  // FETCH — carga inicial siempre, actualizaciones periódicas solo si está reproduciendo
+  // FETCH — siempre activo para todos los clientes, independientemente del estado de reproducción
   useEffect(() => {
-    const fetchNowPlaying = async (onlyIfPlaying = false) => {
-      if (onlyIfPlaying && !playingRef.current) return;
+    const fetchNowPlaying = async () => {
       try {
         const res = await fetch(STATION_API);
         const data = await res.json();
@@ -60,8 +59,8 @@ export default function Player() {
         setElapsed(serverElapsed);
       } catch {}
     };
-    fetchNowPlaying(false);
-    const interval = setInterval(() => fetchNowPlaying(true), 15000);
+    fetchNowPlaying();
+    const interval = setInterval(() => fetchNowPlaying(), 15000);
     return () => clearInterval(interval);
   }, []);
   // TICK
