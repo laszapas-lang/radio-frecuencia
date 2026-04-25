@@ -28,10 +28,11 @@ export default function Player() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animRef = useRef<number>(0);
-  const phaseRef = useRef(0);
-  const ampsRef = useRef(Array.from({ length: 8 }, () => Math.random() * 16 + 5));
-  // Usamos ref para que el loop de animación lea siempre el valor actual
   const playingRef = useRef(false);
+
+  // Web Audio API
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
 
   const duration = track.duration || 1;
   const progress = Math.min((elapsed / duration) * 100, 100);
@@ -63,6 +64,7 @@ export default function Player() {
     const interval = setInterval(() => fetchNowPlaying(), 15000);
     return () => clearInterval(interval);
   }, []);
+
   // TICK
   useEffect(() => {
     if (tickRef.current) clearInterval(tickRef.current);
@@ -75,7 +77,7 @@ export default function Player() {
     return () => { if (tickRef.current) clearInterval(tickRef.current); };
   }, [playing]);
 
-  // VISUALIZER — arranca una sola vez, lee playingRef en cada frame
+  // VISUALIZER — lee frecuencias reales del audio cuando está reproduciendo
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -85,45 +87,60 @@ export default function Player() {
     const CREAM = "rgba(232,227,219,0.45)";
     const RED = "#9B1A2A";
 
+    const BANDS = 64;
+    const smoothed = new Float32Array(BANDS).fill(0);
+
     const draw = () => {
       const W = canvas.width;
       const H = canvas.height;
       ctx.clearRect(0, 0, W, H);
 
-      if (playingRef.current) {
-        phaseRef.current += 0.05;
-        if (Math.random() < 0.05) {
-          ampsRef.current = ampsRef.current.map(() => Math.random() * 14 + 4);
+      const analyser = analyserRef.current;
+
+      if (playingRef.current && analyser) {
+        const freqData = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(freqData);
+
+        const binCount = freqData.length;
+        for (let b = 0; b < BANDS; b++) {
+          const start = Math.floor((b / BANDS) * binCount);
+          const end = Math.floor(((b + 1) / BANDS) * binCount);
+          let sum = 0;
+          for (let k = start; k < end; k++) sum += freqData[k];
+          const avg = sum / Math.max(end - start, 1) / 255;
+          // Sube rápido, baja lento
+          smoothed[b] = avg > smoothed[b]
+            ? smoothed[b] * 0.2 + avg * 0.8
+            : smoothed[b] * 0.88 + avg * 0.12;
         }
       } else {
-        ampsRef.current = ampsRef.current.map(a => Math.max(a * 0.96, 0.4));
+        for (let b = 0; b < BANDS; b++) {
+          smoothed[b] *= 0.93;
+        }
       }
 
-      const amps = ampsRef.current;
-      const phase = phaseRef.current;
-
-      // Onda principal
+      // Onda principal (crema) — mezcla de bandas de frecuencia
       ctx.beginPath();
       for (let x = 0; x < W; x++) {
-        let y = H / 2;
-        amps.forEach((a, i) => {
-          y += a * Math.sin((x / W) * Math.PI * (i + 1) * 2 + phase + i);
-        });
-        y = Math.max(2, Math.min(H - 2, y));
+        const t = x / W;
+        const b0 = Math.min(Math.floor(t * BANDS * 0.5), BANDS - 1);
+        const b1 = Math.min(Math.floor(t * BANDS * 0.25), BANDS - 1);
+        const b2 = Math.min(Math.floor(t * BANDS * 0.8), BANDS - 1);
+        const amp = smoothed[b0] * 0.5 + smoothed[b1] * 0.35 + smoothed[b2] * 0.15;
+        const y = H / 2 + amp * (H / 2 - 2) * Math.sin(t * Math.PI * 5);
         x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       }
       ctx.strokeStyle = CREAM;
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Onda roja secundaria
+      // Onda roja secundaria — solo graves (primeras 12 bandas)
       ctx.beginPath();
       for (let x = 0; x < W; x++) {
-        let y = H / 2;
-        amps.slice(0, 3).forEach((a, i) => {
-          y += (a * 0.45) * Math.sin((x / W) * Math.PI * (i + 2) * 2 + phase * 1.4 + i * 0.6);
-        });
-        y = Math.max(2, Math.min(H - 2, y));
+        const t = x / W;
+        const b = Math.min(Math.floor(t * 12), 11);
+        const amp = smoothed[b] * 0.55;
+        const y = H / 2 + amp * (H / 2 - 2) * Math.sin(t * Math.PI * 3 + Math.PI * 0.6);
         x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       }
       ctx.strokeStyle = RED;
@@ -137,14 +154,35 @@ export default function Player() {
 
     animRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animRef.current);
-  }, []); // solo una vez al montar
+  }, []);
 
   const togglePlay = () => {
     if (!audioRef.current) {
       audioRef.current = new Audio(STREAM_URL);
+      audioRef.current.crossOrigin = "anonymous";
       audioRef.current.volume = volume;
       audioRef.current.muted = muted;
+
+      // Crear contexto de audio y conectar el analyser
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const audioCtx = new AudioCtx();
+      audioCtxRef.current = audioCtx;
+
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;              // 128 bins de frecuencia
+      analyser.smoothingTimeConstant = 0.75;
+      analyserRef.current = analyser;
+
+      const source = audioCtx.createMediaElementSource(audioRef.current);
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
     }
+
+    // Los navegadores suspenden el AudioContext hasta interacción del usuario
+    if (audioCtxRef.current?.state === "suspended") {
+      audioCtxRef.current.resume();
+    }
+
     if (playing) {
       audioRef.current.pause();
     } else {
@@ -185,9 +223,7 @@ export default function Player() {
 
           {/* TRACK INFO + VISUALIZER en la misma fila */}
           <div className="flex justify-between items-center mt-[40px]">
-
             <div className="flex gap-[24px] items-center">
-
               <div>
                 <h1 className="font-['Newsreader'] italic text-[48px] md:text-[64px] leading-none text-[#E8E3DB]">
                   {track.artist}
@@ -207,7 +243,6 @@ export default function Player() {
                 style={{ width: "200px", height: "48px", display: "block" }}
               />
             </div>
-
           </div>
 
           {/* FILA PLAY + PROGRESO */}
