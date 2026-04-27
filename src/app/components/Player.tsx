@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-
-const STREAM_URL = "https://radioweb-u71993.vm.elestio.app/listen/frecuencia/live";
-const STATION_API = "https://radioweb-u71993.vm.elestio.app/api/nowplaying/frecuencia";
+import { STREAM_URL, STATION_API } from "../constants";
 
 function formatTime(seconds: number): string {
   if (!seconds || seconds < 0) return "00:00";
