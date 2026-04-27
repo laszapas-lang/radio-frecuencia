@@ -311,10 +311,10 @@ export default function Player() {
           <div className="flex justify-between items-center mt-[40px]">
             <div className="flex gap-[24px] items-center">
               <div>
-                <h1 className="font-['Newsreader'] italic text-[48px] md:text-[64px] leading-none text-[#E8E3DB]">
+                <h1 className="font-['Newsreader'] text-[32px] md:text-[42px] leading-none text-[#E8E3DB] font-normal">
                   {track.artist}
                 </h1>
-                <p className="italic text-[18px] md:text-[20px] text-[#E8E3DB]/50 mt-[8px]">
+                <p className="font-['Newsreader'] italic text-[20px] md:text-[26px] text-[#E8E3DB]/60 mt-[6px]">
                   {track.title}
                 </p>
               </div>
