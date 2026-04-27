@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
+import { STATION_API } from "../constants";
 import {
   ComposableMap,
   Geographies,
   Geography,
   Marker,
 } from "react-simple-maps";
-
-const STATION_API = ""; // 👇 Igual que en Player.tsx — ej: "https://TU_SUBDOMINIO.elest.io/api/nowplaying/1"
 
 const geoUrl =
   "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
