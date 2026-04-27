@@ -35,6 +35,7 @@ export default function Player() {
   // Web Audio API
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
 
   const duration = track.duration || 1;
   // Clamp progress: nunca puede superar 100% aunque el tick local se adelante
@@ -232,9 +233,17 @@ export default function Player() {
       analyser.smoothingTimeConstant = 0.0;  // suavizado propio en el draw
       analyserRef.current = analyser;
 
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.value = volume;
+      gainNodeRef.current = gainNode;
+
       const source = audioCtx.createMediaElementSource(audioRef.current);
+      // analyser lee ANTES del gain — el volumen del usuario no afecta la onda
       source.connect(analyser);
-      analyser.connect(audioCtx.destination);
+      analyser.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      // Desactivar el volumen nativo del elemento audio (lo gestiona el gainNode)
+      audioRef.current.volume = 1;
     }
 
     // Los navegadores suspenden el AudioContext hasta interacción del usuario
@@ -279,14 +288,18 @@ export default function Player() {
 
   const toggleMute = () => {
     if (!audioRef.current) return;
-    audioRef.current.muted = !muted;
-    setMuted(!muted);
+    const newMuted = !muted;
+    audioRef.current.muted = newMuted;
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = newMuted ? 0 : volume;
+    }
+    setMuted(newMuted);
   };
 
   const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseFloat(e.target.value);
     setVolume(v);
-    if (audioRef.current) audioRef.current.volume = v;
+    if (gainNodeRef.current) gainNodeRef.current.gain.value = v;
     if (muted && v > 0) {
       setMuted(false);
       if (audioRef.current) audioRef.current.muted = false;
