@@ -45,46 +45,71 @@ export default function Player() {
     playingRef.current = playing;
   }, [playing]);
 
-  // FETCH — siempre activo para todos los clientes, independientemente del estado de reproducción
+  // NOWPLAYING — SSE para cambios instantáneos + polling de respaldo cada 15s
   useEffect(() => {
-    const fetchNowPlaying = async () => {
-      try {
-        const res = await fetch(STATION_API);
-        const data = await res.json();
+    const applyData = (data: any) => {
+      const playedAt: number = data.now_playing?.played_at || 0;
+      const serverDuration: number = data.now_playing?.duration || 0;
 
-        // played_at es el timestamp unix de cuando empezó la canción — es el identificador más fiable
-        const playedAt: number = data.now_playing?.played_at || 0;
-        const serverDuration: number = data.now_playing?.duration || 0;
+      if (playedAt !== playedAtRef.current) {
+        playedAtRef.current = playedAt;
+        durationRef.current = serverDuration;
 
-        if (playedAt !== playedAtRef.current) {
-          // Canción nueva detectada en el servidor.
-          // Solo actualizamos la UI si el usuario está reproduciendo en este momento.
-          // Si está en pause, guardamos los datos pendientes y los aplicamos cuando retome.
-          playedAtRef.current = playedAt;
-          durationRef.current = serverDuration;
-
-          if (playingRef.current) {
-            setTrack({
-              artist: data.now_playing?.song?.artist || "Radio Frecuencia",
-              title: data.now_playing?.song?.title || "Emisión en directo",
-              artwork: data.now_playing?.song?.art || "",
-              duration: serverDuration,
-            });
-            const nowElapsed = playedAt > 0
-              ? Math.max(0, Math.floor(Date.now() / 1000) - playedAt)
-              : (data.now_playing?.elapsed || 0);
-            elapsedRef.current = nowElapsed;
-            setElapsed(nowElapsed);
-          }
-          // Si está pausado: playedAtRef ya tiene el nuevo valor, pero la UI no cambia.
-          // Cuando el usuario pulse play, togglePlay leerá playedAtRef y sincronizará.
+        if (playingRef.current) {
+          setTrack({
+            artist: data.now_playing?.song?.artist || "Radio Frecuencia",
+            title: data.now_playing?.song?.title || "Emisión en directo",
+            artwork: data.now_playing?.song?.art || "",
+            duration: serverDuration,
+          });
+          const nowElapsed = playedAt > 0
+            ? Math.max(0, Math.floor(Date.now() / 1000) - playedAt)
+            : (data.now_playing?.elapsed || 0);
+          elapsedRef.current = nowElapsed;
+          setElapsed(nowElapsed);
         }
-        // Si es la misma canción NO tocamos elapsed — el tick local es más suave que el servidor
-      } catch {}
+      }
     };
-    fetchNowPlaying();
-    const interval = setInterval(() => fetchNowPlaying(), 8000);
-    return () => clearInterval(interval);
+
+    // Carga inicial via REST para tener datos inmediatamente
+    fetch(STATION_API)
+      .then(r => r.json())
+      .then(applyData)
+      .catch(() => {});
+
+    // SSE: AzuraCast empuja el evento en el momento exacto que cambia la canción
+    const SSE_URL = STATION_API.replace("/api/nowplaying/", "/api/live/nowplaying/");
+    let es: EventSource | null = null;
+    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+
+    try {
+      es = new EventSource(SSE_URL);
+
+      es.addEventListener("message", (e) => {
+        try { applyData(JSON.parse(e.data)); } catch {}
+      });
+
+      es.onerror = () => {
+        // SSE falló o no está disponible — activar polling de respaldo
+        es?.close();
+        es = null;
+        if (!fallbackInterval) {
+          fallbackInterval = setInterval(() => {
+            fetch(STATION_API).then(r => r.json()).then(applyData).catch(() => {});
+          }, 8000);
+        }
+      };
+    } catch {
+      // EventSource no disponible — polling directo
+      fallbackInterval = setInterval(() => {
+        fetch(STATION_API).then(r => r.json()).then(applyData).catch(() => {});
+      }, 8000);
+    }
+
+    return () => {
+      es?.close();
+      if (fallbackInterval) clearInterval(fallbackInterval);
+    };
   }, []);
 
   // TICK
