@@ -23,9 +23,7 @@ export default function Player() {
   const [elapsed, setElapsed] = useState(0);
   const elapsedRef = useRef(0);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Identificador estable de la canción actual: usamos played_at (timestamp de inicio)
   const playedAtRef = useRef<number>(0);
-  // Duración conocida de la canción actual
   const durationRef = useRef<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -38,94 +36,91 @@ export default function Player() {
   const gainNodeRef = useRef<GainNode | null>(null);
 
   const duration = track.duration || 1;
-  // Clamp progress: nunca puede superar 100% aunque el tick local se adelante
   const progress = Math.min((elapsed / Math.max(duration, 1)) * 100, 100);
 
-  // Mantener playingRef sincronizado
   useEffect(() => {
     playingRef.current = playing;
   }, [playing]);
 
-  // NOWPLAYING — SSE para cambios instantáneos + polling de respaldo cada 15s
+  // NOWPLAYING — polling cada 3s como fuente principal de verdad
+  // SSE como acelerador cuando está disponible, pero el polling es el backbone
   useEffect(() => {
     const applyData = (data: any) => {
       const playedAt: number = data.now_playing?.played_at || 0;
       const serverDuration: number = data.now_playing?.duration || 0;
 
-      if (playedAt !== playedAtRef.current) {
+      // Siempre actualizar si hay canción nueva, independientemente del estado de reproducción
+      // La UI refleja lo que emite el servidor — el usuario verá la info correcta al retomar
+      if (playedAt !== playedAtRef.current && playedAt > 0) {
         playedAtRef.current = playedAt;
         durationRef.current = serverDuration;
 
-        if (playingRef.current) {
-          setTrack({
-            artist: data.now_playing?.song?.artist || "Radio Frecuencia",
-            title: data.now_playing?.song?.title || "Emisión en directo",
-            artwork: data.now_playing?.song?.art || "",
-            duration: serverDuration,
-          });
-          const nowElapsed = playedAt > 0
-            ? Math.max(0, Math.floor(Date.now() / 1000) - playedAt)
-            : (data.now_playing?.elapsed || 0);
-          elapsedRef.current = nowElapsed;
-          setElapsed(nowElapsed);
-        }
+        setTrack({
+          artist: data.now_playing?.song?.artist || "Radio Frecuencia",
+          title: data.now_playing?.song?.title || "Emisión en directo",
+          artwork: data.now_playing?.song?.art || "",
+          duration: serverDuration,
+        });
+
+        // Calcular elapsed desde played_at — es la fuente más precisa
+        const nowElapsed = Math.max(0, Math.floor(Date.now() / 1000) - playedAt);
+        elapsedRef.current = Math.min(nowElapsed, serverDuration);
+        setElapsed(elapsedRef.current);
       }
     };
 
-    // Carga inicial via REST para tener datos inmediatamente
-    fetch(STATION_API)
-      .then(r => r.json())
-      .then(applyData)
-      .catch(() => {});
+    // Carga inicial
+    fetch(STATION_API).then(r => r.json()).then(applyData).catch(() => {});
 
-    // SSE: AzuraCast empuja el evento en el momento exacto que cambia la canción
+    // Polling cada 3s — suficientemente rápido para detectar cambios sin saturar
+    const pollInterval = setInterval(() => {
+      fetch(STATION_API).then(r => r.json()).then(applyData).catch(() => {});
+    }, 3000);
+
+    // SSE como acelerador: si llega antes del poll, mejor — pero no dependemos de él
     const SSE_URL = STATION_API.replace("/api/nowplaying/", "/api/live/nowplaying/");
     let es: EventSource | null = null;
-    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+    let sseReconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    try {
-      es = new EventSource(SSE_URL);
+    const connectSSE = () => {
+      try {
+        es = new EventSource(SSE_URL);
+        es.addEventListener("message", (e) => {
+          try { applyData(JSON.parse(e.data)); } catch {}
+        });
+        es.onerror = () => {
+          es?.close();
+          es = null;
+          // Reintentar SSE en 10s — mientras tanto el polling cubre
+          sseReconnectTimeout = setTimeout(connectSSE, 10000);
+        };
+      } catch {}
+    };
 
-      es.addEventListener("message", (e) => {
-        try { applyData(JSON.parse(e.data)); } catch {}
-      });
-
-      es.onerror = () => {
-        // SSE falló o no está disponible — activar polling de respaldo
-        es?.close();
-        es = null;
-        if (!fallbackInterval) {
-          fallbackInterval = setInterval(() => {
-            fetch(STATION_API).then(r => r.json()).then(applyData).catch(() => {});
-          }, 8000);
-        }
-      };
-    } catch {
-      // EventSource no disponible — polling directo
-      fallbackInterval = setInterval(() => {
-        fetch(STATION_API).then(r => r.json()).then(applyData).catch(() => {});
-      }, 8000);
-    }
+    connectSSE();
 
     return () => {
+      clearInterval(pollInterval);
       es?.close();
-      if (fallbackInterval) clearInterval(fallbackInterval);
+      if (sseReconnectTimeout) clearTimeout(sseReconnectTimeout);
     };
   }, []);
 
-  // TICK
+  // TICK — solo incrementa, no sobreescribe; el poll corrige la deriva
   useEffect(() => {
     if (tickRef.current) clearInterval(tickRef.current);
     if (playing) {
       tickRef.current = setInterval(() => {
-        elapsedRef.current += 1;
-        setElapsed(elapsedRef.current);
+        // Si el tick lleva al elapsed más allá de la duración, lo clampamos
+        const next = Math.min(elapsedRef.current + 1, durationRef.current || 99999);
+        elapsedRef.current = next;
+        setElapsed(next);
       }, 1000);
     }
     return () => { if (tickRef.current) clearInterval(tickRef.current); };
   }, [playing]);
 
-  // VISUALIZER — lee frecuencias reales del audio cuando está reproduciendo
+  // VISUALIZER
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -134,8 +129,6 @@ export default function Player() {
 
     const CREAM = "rgba(232,227,219,0.45)";
     const RED = "#9B1A2A";
-
-    // Buffer de waveform suavizado
     let waveSmoothed: Float32Array | null = null;
 
     const draw = () => {
@@ -155,13 +148,11 @@ export default function Player() {
         }
 
         for (let i = 0; i < bufLen; i++) {
-          // Sube rápido, baja lento para mantener la forma pero reaccionar a picos
           waveSmoothed[i] = waveData[i] > waveSmoothed[i]
             ? waveSmoothed[i] * 0.3 + waveData[i] * 0.7
             : waveSmoothed[i] * 0.6 + waveData[i] * 0.4;
         }
       } else {
-        // Decaimiento suave hacia silencio (128 = centro)
         if (waveSmoothed) {
           for (let i = 0; i < waveSmoothed.length; i++) {
             waveSmoothed[i] = waveSmoothed[i] * 0.88 + 128 * 0.12;
@@ -169,12 +160,9 @@ export default function Player() {
         }
       }
 
-      // Ganancia visual: la señal de radio comprimida suele tener amplitud ~0.3–0.5
-      // multiplicamos para que use bien los 48px de alto
       const GAIN = 4.0;
       const bufLen = waveSmoothed ? waveSmoothed.length : 0;
 
-      // --- Onda principal (crema): waveform real ---
       ctx.beginPath();
       for (let x = 0; x < W; x++) {
         let y = H / 2;
@@ -190,7 +178,6 @@ export default function Player() {
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // --- Onda roja: misma waveform desplazada media longitud (contrapunto orgánico) ---
       ctx.beginPath();
       for (let x = 0; x < W; x++) {
         let y = H / 2;
@@ -220,33 +207,28 @@ export default function Player() {
     if (!audioRef.current) {
       audioRef.current = new Audio(STREAM_URL);
       audioRef.current.crossOrigin = "anonymous";
-      audioRef.current.volume = volume;
+      audioRef.current.volume = 1;
       audioRef.current.muted = muted;
 
-      // Crear contexto de audio y conectar el analyser
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       const audioCtx = new AudioCtx();
       audioCtxRef.current = audioCtx;
 
       const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 256;   // menos muestras = ciclos de onda más largos y legibles
-      analyser.smoothingTimeConstant = 0.0;  // suavizado propio en el draw
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.0;
       analyserRef.current = analyser;
 
       const gainNode = audioCtx.createGain();
-      gainNode.gain.value = volume;
+      gainNode.gain.value = muted ? 0 : volume;
       gainNodeRef.current = gainNode;
 
       const source = audioCtx.createMediaElementSource(audioRef.current);
-      // analyser lee ANTES del gain — el volumen del usuario no afecta la onda
       source.connect(analyser);
       analyser.connect(gainNode);
       gainNode.connect(audioCtx.destination);
-      // Desactivar el volumen nativo del elemento audio (lo gestiona el gainNode)
-      audioRef.current.volume = 1;
     }
 
-    // Los navegadores suspenden el AudioContext hasta interacción del usuario
     if (audioCtxRef.current?.state === "suspended") {
       audioCtxRef.current.resume();
     }
@@ -255,12 +237,12 @@ export default function Player() {
       audioRef.current.pause();
       setPlaying(false);
     } else {
-      // Reconectar al punto actual del stream en vivo (no donde se pausó)
+      // Reconectar al directo
       audioRef.current.src = STREAM_URL;
       audioRef.current.load();
       audioRef.current.play().catch(() => {});
 
-      // Sincronizar UI inmediatamente con lo que emite el servidor ahora
+      // Sincronizar con el servidor al reanudar
       fetch(STATION_API)
         .then(r => r.json())
         .then(data => {
@@ -277,8 +259,8 @@ export default function Player() {
           const nowElapsed = playedAt > 0
             ? Math.max(0, Math.floor(Date.now() / 1000) - playedAt)
             : (data.now_playing?.elapsed || 0);
-          elapsedRef.current = nowElapsed;
-          setElapsed(nowElapsed);
+          elapsedRef.current = Math.min(nowElapsed, serverDuration);
+          setElapsed(elapsedRef.current);
         })
         .catch(() => {});
 
@@ -290,9 +272,7 @@ export default function Player() {
     if (!audioRef.current) return;
     const newMuted = !muted;
     audioRef.current.muted = newMuted;
-    if (gainNodeRef.current) {
-      gainNodeRef.current.gain.value = newMuted ? 0 : volume;
-    }
+    if (gainNodeRef.current) gainNodeRef.current.gain.value = newMuted ? 0 : volume;
     setMuted(newMuted);
   };
 
@@ -320,7 +300,7 @@ export default function Player() {
             <div>LATENCIA: 24MS / 320KBPS</div>
           </div>
 
-          {/* TRACK INFO + VISUALIZER en la misma fila */}
+          {/* TRACK INFO + VISUALIZER */}
           <div className="flex justify-between items-center mt-[40px]">
             <div className="flex gap-[24px] items-center">
               <div>
@@ -333,7 +313,6 @@ export default function Player() {
               </div>
             </div>
 
-            {/* VISUALIZER — solo desktop, a la derecha */}
             <div className="hidden md:block shrink-0 ml-[40px]">
               <canvas
                 ref={canvasRef}
