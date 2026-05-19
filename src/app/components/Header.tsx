@@ -7,7 +7,7 @@ function Content1() {
         Radio Frecuencia
       </p>
       <p className="font-['Space_Grotesk',sans-serif] font-normal leading-[1.5] relative shrink-0 text-[18px] w-full text-[#E8E3DB]">
-        Música en español al otro lado del algoritmo.
+        Música en español, al otro lado del algoritmo.
       </p>
     </div>
   );
